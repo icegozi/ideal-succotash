@@ -12,26 +12,94 @@
 
 Phân tích chi tiết nằm trong [`docs/`](docs/implementation-plan.md), bắt đầu từ [`database-analysis.md`](docs/database-analysis.md).
 
-## Chạy local
+## Chạy local không dùng container
 
-```bash
+```powershell
 npm install
-copy .env.example .env.local
+Copy-Item .env.example .env.local
 npm run dev
 ```
 
-Nếu chưa cấu hình Oracle, môi trường development tự dùng dữ liệu demo trong bộ nhớ để xem đầy đủ UI và luồng CRUD. Dữ liệu demo sẽ mất khi process khởi động lại.
+Nếu chưa cấu hình Oracle, môi trường development tự dùng dữ liệu demo trong bộ nhớ. Để kết nối Oracle chạy trên máy local, giữ `ORACLE_CONNECT_STRING=localhost:1521/FREEPDB1`; ứng dụng đọc mật khẩu từ `ORACLE_PASSWORD`, `ORACLE_APP_PASSWORD` hoặc `ORACLE_PASSWORD_FILE`.
 
-Để kết nối schema thật, đặt:
+## Docker Compose đầy đủ
 
-```env
-ORACLE_USER=THUOC_APP
-ORACLE_PASSWORD=...
-ORACLE_CONNECT_STRING=host:1521/service_name
-ORACLE_POOL_MAX=8
+Stack gồm bốn service theo chuỗi khởi động `oracle → migrate → schema-check → web`:
+
+- `oracle`: Oracle Free 23.26.3, volume dữ liệu bền vững và healthcheck.
+- `migrate`: job một lần, chạy SQL đúng thứ tự và lưu version/checksum vào `SCHEMA_MIGRATIONS`.
+- `schema-check`: job một lần, xác minh bảng/view/package đều tồn tại và hợp lệ.
+- `web`: Next.js standalone chạy non-root, filesystem chỉ đọc, healthcheck readiness và chỉ khởi động sau khi schema hợp lệ.
+
+Chuẩn bị:
+
+```powershell
+Copy-Item .env.example .env
+New-Item -ItemType Directory -Force .secrets
+Set-Content -NoNewline .secrets/oracle_sys_password 'thay-mat-khau-system-manh'
+Set-Content -NoNewline .secrets/oracle_app_password 'thay-mat-khau-app-manh'
 ```
 
-Node-oracledb chạy thin mode nên không cần Oracle Instant Client cho các kết nối thông thường.
+Thay hai giá trị ví dụ bằng password mạnh của riêng bạn; các file này bị Git ignore và được mount vào `/run/secrets`. Sau đó chọn một trong hai cách cung cấp SQL:
+
+1. Copy `01_kho_duoc_oracle.sql`, `03_kho_nghiep_vu_nang_cao.sql`, `05_oracle_flashback_kho.sql` vào `database/original/`.
+2. Hoặc đặt `ORACLE_SCHEMA_DIR` thành đường dẫn tuyệt đối đến thư mục SQL, ví dụ `C:/Users/ADMIN/Downloads/thuoc`.
+
+Khởi động:
+
+```bash
+docker compose up --build -d
+docker compose ps
+docker compose logs -f oracle migrate schema-check web
+```
+
+Ứng dụng: `http://localhost:3000`.
+
+Hai connection Oracle được dùng theo vị trí chạy:
+
+- Trong Docker: `oracle:1521/FREEPDB1` (service `migrate`, `schema-check`, `web`).
+- Từ DBeaver/SQL Developer hoặc app chạy trên máy host: `localhost:1521/FREEPDB1`.
+
+User là giá trị `ORACLE_USER` (mặc định `THUOC_APP`), password là nội dung file `ORACLE_APP_PASSWORD_FILE`. Oracle chỉ publish trên loopback nên không mở ra mạng LAN.
+
+Kiểm tra sức khỏe:
+
+```bash
+curl http://localhost:3000/api/health/live
+curl http://localhost:3000/api/health/ready
+```
+
+`/live` chỉ xác nhận process web đang chạy. `/ready` chỉ trả `200` khi Oracle kết nối được.
+
+### Dữ liệu demo và volume
+
+Đặt `LOAD_DEMO_DATA=true` để migration `900` chạy `02_demo_fefo.sql`. Những migration đã ghi nhận sẽ được bỏ qua ở lần chạy sau; file đã áp dụng bị thay đổi sẽ bị chặn do checksum không khớp. Có thể chủ động chạy lại job bằng:
+
+```bash
+docker compose run --rm migrate
+```
+
+Với database đã có đủ schema nhưng chưa có bảng lịch sử, kiểm tra schema rồi chỉ bật `MIGRATION_BASELINE_EXISTING=true` đúng một lần. Runner sẽ không baseline schema thiếu hoặc có object invalid.
+
+Oracle tự commit nhiều câu lệnh DDL, nên migration lỗi có thể để lại object dở dang dù chưa ghi lịch sử. Hãy đọc log, sửa bằng migration tiến tới đã review; chỉ xóa volume local khi chắc chắn dữ liệu không cần giữ:
+
+```bash
+docker compose down
+docker volume rm medstock_oracle_data
+docker compose up --build -d
+```
+
+Lệnh xóa volume làm mất toàn bộ database local; không dùng với môi trường chứa dữ liệu cần giữ.
+
+### Bảo mật container
+
+- Password được cấp qua Compose secrets, không nằm trong environment của container web.
+- Web chạy UID/GID `1001`, drop toàn bộ Linux capabilities và bật `no-new-privileges`.
+- Web filesystem chỉ đọc; chỉ `/tmp` và `.next/cache` là `tmpfs` ghi được.
+- Oracle nằm trên network backend nội bộ; chỉ migrate, schema-check và web truy cập được.
+- Port web và Oracle mặc định chỉ bind `127.0.0.1`.
+
+Oracle container trong Compose dành cho local development/integration test. Production nên dùng Oracle do DBA quản lý, backup/Flashback/retention riêng, và deploy web bằng cùng Docker image với `ORACLE_CONNECT_STRING` production.
 
 ## Identity và phân quyền
 
@@ -50,15 +118,8 @@ npm run lint
 npm run typecheck
 npm run test
 npm run build
+docker compose --env-file .env.example config
 ```
-
-## Docker
-
-```bash
-docker compose up --build
-```
-
-Container ứng dụng kết nối đến Oracle do DBA quản lý. Database không được tự tạo trong Compose vì schema phụ thuộc package, Flashback, quyền và retention do DBA kiểm soát. Xem [`database/README.md`](database/README.md) để cài baseline.
 
 ## Công việc tiếp theo
 

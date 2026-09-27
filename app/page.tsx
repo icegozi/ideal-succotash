@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ArrowRight, Boxes, CircleAlert, ClipboardCheck, PackageCheck, Pill, ShieldCheck } from "lucide-react";
+import { connection } from "next/server";
 
 import { isDemoDataMode } from "@/modules/medicines/repositories";
 
@@ -10,7 +11,8 @@ const cards = [
   { label: "Kiểm soát", value: "Maker–checker", note: "Bắt buộc với thuốc kiểm soát", icon: ShieldCheck },
 ];
 
-export default function DashboardPage() {
+export default async function DashboardPage() {
+  await connection();
   const demo = isDemoDataMode();
   return (
     <div className="page-stack">

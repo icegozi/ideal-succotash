@@ -1,15 +1,147 @@
+name: ${COMPOSE_PROJECT_NAME:-medstock}
+
+x-oracle-image: &oracle-image ${ORACLE_IMAGE:-gvenzl/oracle-free:23.26.3-slim-faststart}
+
 services:
-  app:
-    build: .
+  oracle:
+    image: *oracle-image
+    pull_policy: missing
+    environment:
+      ORACLE_PASSWORD_FILE: /run/secrets/oracle_sys_password
+      APP_USER: ${ORACLE_USER:-THUOC_APP}
+      APP_USER_PASSWORD_FILE: /run/secrets/oracle_app_password
+    secrets:
+      - oracle_sys_password
+      - oracle_app_password
     ports:
-      - "3000:3000"
+      - "127.0.0.1:${ORACLE_PORT:-1521}:1521"
+    volumes:
+      - oracle_data:/opt/oracle/oradata
+    healthcheck:
+      test: ["CMD", "healthcheck.sh"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 30s
+      start_interval: 5s
+    shm_size: "1gb"
+    restart: unless-stopped
+    stop_grace_period: 2m
+    networks:
+      - backend
+
+  migrate:
+    image: *oracle-image
+    pull_policy: missing
+    depends_on:
+      oracle:
+        condition: service_healthy
+    entrypoint: ["/bin/bash", "/opt/medstock/migrate.sh"]
+    environment:
+      ORACLE_USER: ${ORACLE_USER:-THUOC_APP}
+      ORACLE_ADMIN_PASSWORD_FILE: /run/secrets/oracle_sys_password
+      ORACLE_PASSWORD_FILE: /run/secrets/oracle_app_password
+      ORACLE_ADMIN_CONNECT_STRING: oracle:1521/FREEPDB1
+      ORACLE_CONNECT_STRING: oracle:1521/FREEPDB1
+      LOAD_DEMO_DATA: ${LOAD_DEMO_DATA:-false}
+      MIGRATION_BASELINE_EXISTING: ${MIGRATION_BASELINE_EXISTING:-false}
+    secrets:
+      - oracle_sys_password
+      - oracle_app_password
+    volumes:
+      - ./database/migrations/migrate.sh:/opt/medstock/migrate.sh:ro
+      - ${ORACLE_SCHEMA_DIR:-./database/original}:/schema:ro
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    restart: "no"
+    networks:
+      - backend
+
+  schema-check:
+    image: *oracle-image
+    pull_policy: missing
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    entrypoint: ["/bin/bash", "/opt/medstock/check-schema.sh"]
+    environment:
+      ORACLE_USER: ${ORACLE_USER:-THUOC_APP}
+      ORACLE_PASSWORD_FILE: /run/secrets/oracle_app_password
+      ORACLE_CONNECT_STRING: oracle:1521/FREEPDB1
+    secrets:
+      - oracle_app_password
+    volumes:
+      - ./database/docker-check/check-schema.sh:/opt/medstock/check-schema.sh:ro
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    restart: "no"
+    networks:
+      - backend
+
+  web:
+    image: ${APP_IMAGE:-medstock-web:local}
+    build:
+      context: .
+      dockerfile: Dockerfile
+    init: true
+    depends_on:
+      schema-check:
+        condition: service_completed_successfully
     environment:
       NODE_ENV: production
-      ORACLE_USER: ${ORACLE_USER}
-      ORACLE_PASSWORD: ${ORACLE_PASSWORD}
-      ORACLE_CONNECT_STRING: ${ORACLE_CONNECT_STRING}
+      HOSTNAME: 0.0.0.0
+      PORT: 3000
+      ORACLE_USER: ${ORACLE_USER:-THUOC_APP}
+      ORACLE_PASSWORD_FILE: /run/secrets/oracle_app_password
+      ORACLE_CONNECT_STRING: oracle:1521/FREEPDB1
       ORACLE_POOL_MAX: ${ORACLE_POOL_MAX:-8}
+    secrets:
+      - oracle_app_password
+    ports:
+      - "127.0.0.1:${APP_PORT:-3000}:3000"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O - http://127.0.0.1:3000/api/health/ready | grep -q '\"status\":\"ready\"'"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    read_only: true
+    tmpfs:
+      - /tmp
+      - /app/.next/cache:uid=1001,gid=1001,mode=0755
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
     restart: unless-stopped
+    stop_grace_period: 30s
+    networks:
+      - frontend
+      - backend
 
-# Oracle is intentionally external: the supplied schema uses packages, Flashback,
-# and DBA-managed retention/privileges that should not be provisioned by the web app.
+secrets:
+  oracle_sys_password:
+    file: ${ORACLE_SYS_PASSWORD_FILE:-./.secrets/oracle_sys_password}
+  oracle_app_password:
+    file: ${ORACLE_APP_PASSWORD_FILE:-./.secrets/oracle_app_password}
+
+volumes:
+  oracle_data:
+    name: ${COMPOSE_PROJECT_NAME:-medstock}_oracle_data
+
+networks:
+  frontend:
+    name: ${COMPOSE_PROJECT_NAME:-medstock}_frontend
+  backend:
+    name: ${COMPOSE_PROJECT_NAME:-medstock}_backend
+    internal: true

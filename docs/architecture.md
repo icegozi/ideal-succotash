@@ -47,10 +47,27 @@ The service depends on a repository contract. Unit tests use an in-memory implem
 ## Schema and migration strategy
 
 ```text
-Existing Oracle SQL → DBA-installed baseline → application adapter → future numbered Oracle migrations
+Existing Oracle SQL → versioned Compose migration job → schema validation → application adapter
 ```
 
-The supplied scripts are the baseline. The app does not manufacture historical migrations. Future changes belong in reviewed, forward-only Oracle scripts and must include compatibility/rollback notes. Production schema changes are never run automatically by the web process.
+The supplied scripts are registered as versions `001`, `002`, and `003`; optional local demo data is `900`. The one-shot migration service records filenames and SHA-256 checksums in `SCHEMA_MIGRATIONS`. Future changes belong in reviewed, forward-only Oracle scripts and must include compatibility/rollback notes. The web process never runs schema changes.
+
+## Container topology
+
+```text
+localhost:3000 → web ─────────────────────────┐
+                                              │
+oracle (healthy) → migrate → schema-check ────┴→ oracle:1521/FREEPDB1
+```
+
+- `oracle` is a pinned Oracle Free image for local development and integration testing. Its data lives in the named `oracle_data` volume.
+- `migrate` mounts the source SQL read-only, installs unapplied versions in order, verifies checksums, and optionally loads `02` demo data.
+- `schema-check` is a one-shot readiness gate. It verifies migration history, core tables, views, packages, and absence of invalid objects before `web` starts.
+- `web` runs the Next.js standalone output as an unprivileged user with a read-only filesystem and file-backed Docker secret.
+- `/api/health/live` checks the web process; `/api/health/ready` additionally checks Oracle connectivity.
+- The backend network is internal. Published ports bind loopback by default.
+
+This bundled Oracle service is not a production database recommendation. Production Oracle lifecycle, backup, Flashback, and retention stay under DBA control.
 
 ## Identity boundary
 

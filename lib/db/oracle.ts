@@ -1,5 +1,6 @@
 import "server-only";
 
+import { readFileSync } from "node:fs";
 import oracledb, { type Connection, type Pool, type PoolAttributes } from "oracledb";
 
 import { AppError } from "@/lib/errors/app-error";
@@ -8,9 +9,26 @@ declare global {
   var __medstockOraclePool: Promise<Pool> | undefined;
 }
 
+function readSecret(valueName: string, fileName: string): string | undefined {
+  const directValue = process.env[valueName]?.trim();
+  if (directValue) return directValue;
+
+  const secretFile = process.env[fileName]?.trim();
+  if (!secretFile) return undefined;
+
+  try {
+    return readFileSync(secretFile, "utf8").trim() || undefined;
+  } catch (error) {
+    console.error(`Unable to read secret file configured by ${fileName}`, error);
+    return undefined;
+  }
+}
+
 function poolConfig(): PoolAttributes {
   const user = process.env.ORACLE_USER;
-  const password = process.env.ORACLE_PASSWORD;
+  const password =
+    readSecret("ORACLE_PASSWORD", "ORACLE_PASSWORD_FILE") ||
+    process.env.ORACLE_APP_PASSWORD?.trim();
   const connectString = process.env.ORACLE_CONNECT_STRING;
 
   if (!user || !password || !connectString) {
@@ -33,7 +51,10 @@ function poolConfig(): PoolAttributes {
 }
 
 async function getPool(): Promise<Pool> {
-  globalThis.__medstockOraclePool ??= oracledb.createPool(poolConfig());
+  globalThis.__medstockOraclePool ??= oracledb.createPool(poolConfig()).catch((error) => {
+    globalThis.__medstockOraclePool = undefined;
+    throw error;
+  });
   return globalThis.__medstockOraclePool;
 }
 
@@ -76,9 +97,17 @@ export async function withOracleConnection<T>(
 export function isOracleConfigured(): boolean {
   return Boolean(
     process.env.ORACLE_USER &&
-      process.env.ORACLE_PASSWORD &&
+      (process.env.ORACLE_PASSWORD ||
+        process.env.ORACLE_PASSWORD_FILE ||
+        process.env.ORACLE_APP_PASSWORD) &&
       process.env.ORACLE_CONNECT_STRING,
   );
+}
+
+export async function checkOracleConnection(): Promise<void> {
+  await withOracleConnection(async (connection) => {
+    await connection.execute("SELECT 1 FROM DUAL");
+  });
 }
 
 export { oracledb };

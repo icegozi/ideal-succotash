@@ -84,3 +84,27 @@ Inventing privileged users or trusting client-supplied audit names would be unsa
 
 Local demo permissions can be configured explicitly, but production mutations remain blocked until a trusted session adapter is supplied.
 
+## Gate web startup on Oracle schema readiness
+
+### Context
+
+Oracle may report that the listener is healthy before application packages and views are installed. Starting the web process at that point produces misleading runtime failures.
+
+### Options
+
+- Start web when the Oracle container starts.
+- Start web when Oracle's built-in healthcheck passes.
+- Add a one-shot application-schema validation gate.
+
+### Chosen approach
+
+Run `migrate` after Oracle becomes healthy, run `schema-check` after migrations complete, and start `web` only when validation exits successfully.
+
+### Reason
+
+It distinguishes database availability, migration completion, and application-schema readiness without making the web container mutate the database.
+
+### Consequences
+
+Missing or invalid objects stop the stack early with a targeted error. Applied migration checksums are immutable, and an existing schema requires an explicit validated baseline operation before it can join migration history.
+
