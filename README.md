@@ -1,36 +1,71 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# MedStock
 
-## Getting Started
+Ứng dụng Next.js quản lý kho dược từ schema Oracle 19c+ có sẵn. Bản hiện tại hoàn thành module tham chiếu **Danh mục thuốc** với danh sách, tìm kiếm, lọc, phân trang, chi tiết, tạo, chỉnh sửa/deactivate, kiểm tra quyền ở server, validation Zod và lớp repository Oracle.
 
-First, run the development server:
+## Kiến trúc chính
+
+- Next.js 16 App Router, React Server Components và Server Actions.
+- `node-oracledb` thin mode; Prisma không được dùng vì Prisma không hỗ trợ Oracle.
+- Luồng `UI → Action → permission → Zod → service → repository → Oracle`.
+- Dữ liệu tồn kho chỉ được thay đổi qua các package PL/SQL hiện hữu; không DML trực tiếp vào số dư/ledger.
+- Không hard-delete thuốc. Trạng thái `TRANG_THAI` được dùng để ngừng hoạt động.
+
+Phân tích chi tiết nằm trong [`docs/`](docs/implementation-plan.md), bắt đầu từ [`database-analysis.md`](docs/database-analysis.md).
+
+## Chạy local
 
 ```bash
+npm install
+copy .env.example .env.local
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Nếu chưa cấu hình Oracle, môi trường development tự dùng dữ liệu demo trong bộ nhớ để xem đầy đủ UI và luồng CRUD. Dữ liệu demo sẽ mất khi process khởi động lại.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Để kết nối schema thật, đặt:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```env
+ORACLE_USER=THUOC_APP
+ORACLE_PASSWORD=...
+ORACLE_CONNECT_STRING=host:1521/service_name
+ORACLE_POOL_MAX=8
+```
 
-## Learn More
+Node-oracledb chạy thin mode nên không cần Oracle Instant Client cho các kết nối thông thường.
 
-To learn more about Next.js, take a look at the following resources:
+## Identity và phân quyền
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Schema không có user/role/permission. Development dùng `DEV_AUTH_BYPASS=true` với ba quyền medicine để kiểm thử. Production luôn fail closed vì chưa có session adapter tin cậy. Trước khi triển khai production cần chọn identity provider và ánh xạ quyền:
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- `medicine.read`
+- `medicine.create`
+- `medicine.update`
 
-## Deploy on Vercel
+Không lấy tên người lập/duyệt từ form hoặc client.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Kiểm tra chất lượng
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```bash
+npm run lint
+npm run typecheck
+npm run test
+npm run build
+```
+
+## Docker
+
+```bash
+docker compose up --build
+```
+
+Container ứng dụng kết nối đến Oracle do DBA quản lý. Database không được tự tạo trong Compose vì schema phụ thuộc package, Flashback, quyền và retention do DBA kiểm soát. Xem [`database/README.md`](database/README.md) để cài baseline.
+
+## Công việc tiếp theo
+
+1. Chốt identity provider, vai trò và maker/checker.
+2. Thêm integration test trên schema Oracle dùng riêng cho test.
+3. Hoàn thiện quản lý quy đổi đơn vị giao dịch.
+4. Triển khai nhập kho và xuất FEFO bằng `PKG_KHO_DUOC`.
+5. Triển khai kiểm kê, chuyển kho, trả hàng, biệt trữ, thu hồi, hủy và đảo bằng `PKG_KHO_NANG_CAO`.
+
+Các câu hỏi nghiệp vụ chưa thể suy ra từ database được đánh dấu `BUSINESS_DECISION_REQUIRED` trong [`docs/business-rules.md`](docs/business-rules.md).

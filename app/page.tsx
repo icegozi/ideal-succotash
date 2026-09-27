@@ -1,69 +1,31 @@
-import Image from "next/image";
+import Link from "next/link";
+import { ArrowRight, Boxes, CircleAlert, ClipboardCheck, PackageCheck, Pill, ShieldCheck } from "lucide-react";
 
-export default function Home() {
+import { isDemoDataMode } from "@/modules/medicines/repositories";
+
+const cards = [
+  { label: "Danh mục thuốc", value: "Sẵn sàng", note: "Module tham chiếu", icon: Pill },
+  { label: "Tồn khả dụng", value: "Theo lô", note: "Đọc từ view tổng hợp", icon: Boxes },
+  { label: "Cảnh báo hạn", value: "90 ngày", note: "Theo VW_CANH_BAO_HAN_DUNG", icon: CircleAlert },
+  { label: "Kiểm soát", value: "Maker–checker", note: "Bắt buộc với thuốc kiểm soát", icon: ShieldCheck },
+];
+
+export default function DashboardPage() {
+  const demo = isDemoDataMode();
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{" "}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              page.tsx
-            </code>{" "}
-            file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
+    <div className="page-stack">
+      <section className="hero-panel">
+        <div><p className="eyebrow">Tổng quan vận hành</p><h1 className="hero-title">Kho dược an toàn, rõ từng lô thuốc.</h1><p className="hero-copy">Nền tảng quản lý tồn theo FEFO, biệt trữ, thu hồi và sổ giao dịch bất biến trên Oracle.</p></div>
+        <Link className="button button-primary" href="/medicines">Mở danh mục thuốc <ArrowRight size={17} aria-hidden="true" /></Link>
+      </section>
+      {demo ? <div className="notice notice-info" role="status"><PackageCheck size={19} aria-hidden="true" /><div><strong>Đang dùng dữ liệu demo cục bộ.</strong><span>Cấu hình biến môi trường Oracle để đọc và ghi schema thật.</span></div></div> : null}
+      <section className="metric-grid" aria-label="Tổng quan hệ thống">
+        {cards.map(({ label, value, note, icon: Icon }) => <article className="metric-card" key={label}><div className="metric-icon"><Icon size={20} aria-hidden="true" /></div><p>{label}</p><strong>{value}</strong><span>{note}</span></article>)}
+      </section>
+      <section className="panel roadmap-panel">
+        <div><p className="eyebrow">Tiến độ triển khai</p><h2>Danh mục thuốc là module chuẩn đầu tiên</h2><p>Luồng tồn kho sẽ gọi trực tiếp các package PL/SQL hiện hữu sau khi mô hình danh tính và phê duyệt được xác nhận.</p></div>
+        <ol className="step-list"><li className="done"><ClipboardCheck size={18} /> Phân tích database &amp; kiến trúc</li><li className="active"><Pill size={18} /> Danh mục thuốc đầy đủ</li><li><Boxes size={18} /> Nhập, xuất FEFO và nghiệp vụ nâng cao</li></ol>
+      </section>
     </div>
   );
 }

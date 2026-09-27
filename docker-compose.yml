@@ -1,0 +1,15 @@
+services:
+  app:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: production
+      ORACLE_USER: ${ORACLE_USER}
+      ORACLE_PASSWORD: ${ORACLE_PASSWORD}
+      ORACLE_CONNECT_STRING: ${ORACLE_CONNECT_STRING}
+      ORACLE_POOL_MAX: ${ORACLE_POOL_MAX:-8}
+    restart: unless-stopped
+
+# Oracle is intentionally external: the supplied schema uses packages, Flashback,
+# and DBA-managed retention/privileges that should not be provisioned by the web app.
