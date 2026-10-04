@@ -6,6 +6,16 @@ export const permissions = {
   medicineRead: "medicine.read",
   medicineCreate: "medicine.create",
   medicineUpdate: "medicine.update",
+  inventoryRead: "inventory.read",
+  stockInRead: "stock_in.read",
+  stockInCreate: "stock_in.create",
+  stockInConfirm: "stock_in.confirm",
+  stockInCancel: "stock_in.cancel",
+  stockOutRead: "stock_out.read",
+  stockOutCreate: "stock_out.create",
+  stockOutConfirm: "stock_out.confirm",
+  stockOutCancel: "stock_out.cancel",
+  fefoOverride: "inventory.fefo.override",
 } as const;
 
 export type Permission = (typeof permissions)[keyof typeof permissions];
@@ -15,13 +25,13 @@ export type Actor = {
   permissions: ReadonlySet<Permission>;
 };
 
-const allMedicinePermissions = new Set<Permission>(Object.values(permissions));
+const allDefaultPermissions = new Set<Permission>(Object.values(permissions));
 
 export async function getCurrentActor(): Promise<Actor> {
   if (process.env.NODE_ENV !== "production" && process.env.DEV_AUTH_BYPASS !== "false") {
     return {
       name: process.env.DEV_OPERATOR_NAME?.trim() || "Dược sĩ phát triển",
-      permissions: allMedicinePermissions,
+      permissions: allDefaultPermissions,
     };
   }
 

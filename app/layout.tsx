@@ -10,5 +10,5 @@ export const metadata: Metadata = {
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
-  return <html lang="vi"><body><AppShell>{children}</AppShell></body></html>;
+  return <html lang="vi" suppressHydrationWarning><body suppressHydrationWarning><AppShell>{children}</AppShell></body></html>;
 }

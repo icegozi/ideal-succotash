@@ -1,4 +1,5 @@
 import { AppError } from "@/lib/errors/app-error";
+import { demoUnits } from "@/lib/demo";
 import type { MedicineRepository } from "@/modules/medicines/repositories/medicine.repository";
 import type {
   Medicine,
@@ -8,16 +9,10 @@ import type {
   UnitOption,
 } from "@/modules/medicines/types/medicine.types";
 
-const units: UnitOption[] = [
-  { id: 1, code: "VIEN", name: "Viên" },
-  { id: 2, code: "HOP", name: "Hộp" },
-  { id: 4, code: "LO", name: "Lọ" },
-  { id: 5, code: "CHAI", name: "Chai" },
-  { id: 6, code: "ONG", name: "Ống" },
-  { id: 9, code: "ML", name: "Mililit" },
-];
-
-const seed: Medicine[] = [
+/**
+ * Baseline 3 medicines used for isolated unit test scenarios.
+ */
+const baselineSeed: Medicine[] = [
   {
     id: 1,
     code: "PARA500",
@@ -69,7 +64,17 @@ const seed: Medicine[] = [
 ];
 
 export class InMemoryMedicineRepository implements MedicineRepository {
-  private medicines = seed.map((medicine) => ({ ...medicine }));
+  private medicines: Medicine[];
+  private units: UnitOption[];
+
+  /**
+   * Initializes repository with given medicines or defaults to baseline seed.
+   * Passing standardDemoMedicines activates the full hospital catalog.
+   */
+  constructor(initialMedicines?: Medicine[], initialUnits?: UnitOption[]) {
+    this.medicines = (initialMedicines ?? baselineSeed).map((m) => ({ ...m }));
+    this.units = (initialUnits ?? demoUnits).map((u) => ({ ...u }));
+  }
 
   async list(query: Required<MedicineListQuery>): Promise<MedicinePage> {
     const normalizedQuery = query.query.toLocaleLowerCase("vi");
@@ -113,7 +118,7 @@ export class InMemoryMedicineRepository implements MedicineRepository {
   }
 
   async listActiveUnits(): Promise<UnitOption[]> {
-    return units;
+    return this.units;
   }
 
   async create(input: MedicineInput): Promise<Medicine> {
@@ -143,7 +148,7 @@ export class InMemoryMedicineRepository implements MedicineRepository {
   }
 
   private toMedicine(id: number, input: MedicineInput): Medicine {
-    const unit = units.find(({ id: unitId }) => unitId === input.baseUnitId);
+    const unit = this.units.find(({ id: unitId }) => unitId === input.baseUnitId);
     if (!unit) throw new AppError("VALIDATION_ERROR", "Đơn vị cơ sở không hợp lệ.");
 
     return {

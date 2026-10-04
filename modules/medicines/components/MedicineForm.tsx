@@ -8,6 +8,8 @@ import { useState, useTransition } from "react";
 import { useForm } from "react-hook-form";
 
 import { createMedicineAction, type MedicineActionState, updateMedicineAction } from "@/modules/medicines/actions/medicine.actions";
+import { Button } from "@/components/shared/Button";
+import { FormField, FormSection, Input, Select } from "@/components/shared/form";
 import { medicineInputSchema, type MedicineFormValues } from "@/modules/medicines/schemas/medicine.schema";
 import type { Medicine, MedicineInput, UnitOption } from "@/modules/medicines/types/medicine.types";
 
@@ -37,32 +39,102 @@ export function MedicineForm({ medicine, units }: { medicine?: Medicine; units: 
 
   return <form className="form-stack" onSubmit={handleSubmit(submit)} noValidate>
     {actionState.status === "error" ? <div className="notice notice-error" role="alert">{actionState.message}</div> : null}
-    <section className="form-section">
-      <div className="form-section-heading"><span>01</span><div><h2>Thông tin nhận diện</h2><p>Mã và tên dùng xuyên suốt chứng từ kho.</p></div></div>
+    <FormSection step="01" title="Thông tin nhận diện" description="Mã và tên dùng xuyên suốt chứng từ kho.">
       <div className="form-grid">
-        <label className="field"><span>Mã thuốc <b>*</b></span><input {...register("code")} aria-invalid={Boolean(fieldError("code"))} placeholder="VD: PARA500" />{fieldError("code") ? <small>{fieldError("code")}</small> : null}</label>
-        <label className="field field-wide"><span>Tên thuốc <b>*</b></span><input {...register("name")} aria-invalid={Boolean(fieldError("name"))} placeholder="Tên thương mại hoặc tên đầy đủ" />{fieldError("name") ? <small>{fieldError("name")}</small> : null}</label>
-        <label className="field"><span>Hoạt chất</span><input {...register("activeIngredient")} placeholder="VD: Paracetamol" />{fieldError("activeIngredient") ? <small>{fieldError("activeIngredient")}</small> : null}</label>
-        <label className="field"><span>Hàm lượng</span><input {...register("strength")} placeholder="VD: 500 mg" />{fieldError("strength") ? <small>{fieldError("strength")}</small> : null}</label>
+        <FormField label="Mã thuốc" required error={fieldError("code")}>
+          <Input {...register("code")} placeholder="VD: PARA500" hasError={Boolean(fieldError("code"))} />
+        </FormField>
+        <FormField label="Tên thuốc" required wide error={fieldError("name")}>
+          <Input {...register("name")} placeholder="Tên thương mại hoặc tên đầy đủ" hasError={Boolean(fieldError("name"))} />
+        </FormField>
+        <FormField label="Hoạt chất" error={fieldError("activeIngredient")}>
+          <Input {...register("activeIngredient")} placeholder="VD: Paracetamol" hasError={Boolean(fieldError("activeIngredient"))} />
+        </FormField>
+        <FormField label="Hàm lượng" error={fieldError("strength")}>
+          <Input {...register("strength")} placeholder="VD: 500 mg" hasError={Boolean(fieldError("strength"))} />
+        </FormField>
       </div>
-    </section>
-    <section className="form-section">
-      <div className="form-section-heading"><span>02</span><div><h2>Đặc tính sử dụng</h2><p>Thông tin hỗ trợ nhận biết và cấp phát.</p></div></div>
+    </FormSection>
+    <FormSection step="02" title="Đặc tính sử dụng" description="Thông tin hỗ trợ nhận biết và cấp phát.">
       <div className="form-grid">
-        <label className="field"><span>Dạng bào chế</span><input {...register("dosageForm")} placeholder="Viên nén, dung dịch…" />{fieldError("dosageForm") ? <small>{fieldError("dosageForm")}</small> : null}</label>
-        <label className="field"><span>Đường dùng</span><input {...register("route")} placeholder="Uống, tiêm…" />{fieldError("route") ? <small>{fieldError("route")}</small> : null}</label>
-        <label className="field field-wide"><span>Hãng sản xuất</span><input {...register("manufacturer")} placeholder="Tên nhà sản xuất" />{fieldError("manufacturer") ? <small>{fieldError("manufacturer")}</small> : null}</label>
+        <FormField label="Dạng bào chế" error={fieldError("dosageForm")}>
+          <Input {...register("dosageForm")} placeholder="Viên nén, dung dịch…" hasError={Boolean(fieldError("dosageForm"))} />
+        </FormField>
+        <FormField label="Đường dùng" error={fieldError("route")}>
+          <Input {...register("route")} placeholder="Uống, tiêm…" hasError={Boolean(fieldError("route"))} />
+        </FormField>
+        <FormField label="Hãng sản xuất" wide error={fieldError("manufacturer")}>
+          <Input {...register("manufacturer")} placeholder="Tên nhà sản xuất" hasError={Boolean(fieldError("manufacturer"))} />
+        </FormField>
       </div>
-    </section>
-    <section className="form-section">
-      <div className="form-section-heading"><span>03</span><div><h2>Thiết lập kho</h2><p>Đơn vị cơ sở là đơn vị lưu tồn và bị khóa sau khi đã có lô.</p></div></div>
+    </FormSection>
+    <FormSection step="03" title="Thiết lập kho" description="Đơn vị cơ sở là đơn vị lưu tồn và bị khóa sau khi đã có lô.">
       <div className="form-grid">
-        <label className="field"><span>Đơn vị cơ sở <b>*</b></span>{medicine ? <><input type="hidden" {...register("baseUnitId")} /><div className="readonly-field">{medicine.baseUnitName} ({medicine.baseUnitCode})</div><em>Không đổi tại màn hình này</em></> : <select {...register("baseUnitId")} aria-invalid={Boolean(fieldError("baseUnitId"))}>{units.map((unit) => <option key={unit.id} value={unit.id}>{unit.name} ({unit.code})</option>)}</select>}{fieldError("baseUnitId") ? <small>{fieldError("baseUnitId")}</small> : null}</label>
-        <label className="field"><span>Tồn tối thiểu</span><input type="number" min="0" step="0.000001" {...register("minimumStock")} aria-invalid={Boolean(fieldError("minimumStock"))} />{fieldError("minimumStock") ? <small>{fieldError("minimumStock")}</small> : null}</label>
-        <label className="field"><span>Thuốc kiểm soát</span><select {...register("controlled")}><option value="N">Không</option><option value="Y">Có — cần phê duyệt</option></select>{fieldError("controlled") ? <small>{fieldError("controlled")}</small> : null}</label>
-        <label className="field"><span>Trạng thái</span><select {...register("active")}><option value="Y">Đang hoạt động</option><option value="N">Ngừng hoạt động</option></select>{fieldError("active") ? <small>{fieldError("active")}</small> : null}</label>
+        <FormField
+          label="Đơn vị cơ sở"
+          required
+          error={fieldError("baseUnitId")}
+          hint={medicine ? "Không đổi tại màn hình này" : undefined}
+        >
+          {medicine ? (
+            <>
+              <input type="hidden" {...register("baseUnitId")} />
+              <Input isReadonlyView readonlyContent={`${medicine.baseUnitName} (${medicine.baseUnitCode})`} />
+            </>
+          ) : (
+            <Select
+              {...register("baseUnitId")}
+              hasError={Boolean(fieldError("baseUnitId"))}
+              options={units.map((unit) => ({
+                value: unit.id,
+                label: `${unit.name} (${unit.code})`,
+              }))}
+            />
+          )}
+        </FormField>
+        <FormField label="Tồn tối thiểu" error={fieldError("minimumStock")}>
+          <Input
+            type="number"
+            min="0"
+            step="0.000001"
+            {...register("minimumStock")}
+            hasError={Boolean(fieldError("minimumStock"))}
+          />
+        </FormField>
+        <FormField label="Thuốc kiểm soát" error={fieldError("controlled")}>
+          <Select
+            {...register("controlled")}
+            hasError={Boolean(fieldError("controlled"))}
+            options={[
+              { value: "N", label: "Không" },
+              { value: "Y", label: "Có — cần phê duyệt" },
+            ]}
+          />
+        </FormField>
+        <FormField label="Trạng thái" error={fieldError("active")}>
+          <Select
+            {...register("active")}
+            hasError={Boolean(fieldError("active"))}
+            options={[
+              { value: "Y", label: "Đang hoạt động" },
+              { value: "N", label: "Ngừng hoạt động" },
+            ]}
+          />
+        </FormField>
       </div>
-    </section>
-    <div className="form-actions"><Link className="button button-secondary" href={medicine ? `/medicines/${medicine.id}` : "/medicines"}><ArrowLeft size={17} /> Hủy</Link><button className="button button-primary" disabled={pending} type="submit">{pending ? <LoaderCircle className="spin" size={17} /> : <Save size={17} />}{pending ? "Đang lưu…" : medicine ? "Lưu thay đổi" : "Tạo thuốc"}</button></div>
+    </FormSection>
+    <div className="form-actions">
+      <Link className="btn btn-secondary" href={medicine ? `/medicines/${medicine.id}` : "/medicines"}>
+        <ArrowLeft size={16} /> Hủy
+      </Link>
+      <Button
+        type="submit"
+        variant="primary"
+        isLoading={pending}
+        leftIcon={<Save size={16} />}
+      >
+        {pending ? "Đang lưu…" : medicine ? "Lưu thay đổi" : "Tạo thuốc"}
+      </Button>
+    </div>
   </form>;
 }
