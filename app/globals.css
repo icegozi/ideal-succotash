@@ -905,15 +905,82 @@ kbd {
 
 .search-field input { width: 100%; border: 0; outline: 0; background: transparent; font-size: 13px; }
 
-select, .field input, .field select, .field textarea {
+select,
+input[type="date"],
+.date-input,
+.filter-form input,
+.field input,
+.field select,
+.field textarea {
   min-height: var(--control-height-md);
+  height: var(--control-height-md);
   padding: 0 12px;
   border: 1px solid var(--border-default);
   border-radius: var(--radius-md);
   color: var(--text-primary);
   background: white;
   font-size: 13px;
+  font-family: inherit;
+  box-sizing: border-box;
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+/* Date Input Container & Controls */
+.date-input-wrapper {
+  position: relative;
+  width: 100%;
+  display: flex;
+  align-items: center;
+}
+
+input[type="date"],
+.date-input {
+  width: 100%;
+  position: relative;
+  padding-right: 36px;
+}
+
+.date-input-trigger {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  padding: 0;
+  margin: 0;
+  color: var(--text-muted);
+  cursor: pointer;
+  z-index: 2;
+  transition: color 0.15s ease;
+}
+
+.date-input-trigger:hover {
+  color: var(--brand-primary);
+}
+
+.date-picker-icon {
+  width: 16px;
+  height: 16px;
+  pointer-events: none;
+}
+
+/* Position native indicator over the icon area so native click opens picker directly */
+input[type="date"]::-webkit-calendar-picker-indicator,
+.date-input::-webkit-calendar-picker-indicator {
+  position: absolute;
+  right: 4px;
+  top: 0;
+  width: 32px;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  opacity: 0;
+  cursor: pointer;
+  z-index: 3;
 }
 
 select, .field select {
@@ -925,10 +992,24 @@ select, .field select {
   cursor: pointer;
 }
 
-select:focus, .field input:focus, .field textarea:focus {
+select:focus,
+input[type="date"]:focus,
+.date-input:focus,
+.filter-form input:focus,
+.field input:focus,
+.field select:focus,
+.field textarea:focus {
   border-color: var(--brand-primary);
   box-shadow: 0 0 0 3px var(--brand-primary-ring);
   outline: 0;
+}
+
+select[aria-invalid="true"],
+input[aria-invalid="true"],
+.date-input[aria-invalid="true"],
+.field [aria-invalid="true"] {
+  border-color: var(--status-danger-text) !important;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15) !important;
 }
 
 /* Custom Branded Checkbox */

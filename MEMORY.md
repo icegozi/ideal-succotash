@@ -239,6 +239,7 @@ icegozi_medstock/
 3. **React Hook Form Native Compatibility**: Mọi control (`Input`, `Select`, `Textarea`, `DateInput`, `SearchInput`, `Checkbox`) đều dùng `forwardRef`, tương thích 100% với `register()`.
 4. **Table Cell Form Controls**: Trong các bảng dữ liệu động (table rows của phiếu nhập), dùng trực tiếp control có `hasError`, không bọc trong `FormField` (đã có tiêu đề `<th>`).
 5. **Filter Form Controls**: Dùng `SearchInput` và `Select` cho các filter bar submit bằng native GET request.
+6. **DateInput Right-Aligned Icon**: `<DateInput>` được bọc trong `.date-input-wrapper` với icon `Calendar` đồng bộ lề phải (`right: 12px`) và indicator phủ bề mặt, giữ trải nghiệm đồng nhất với chevron mũi tên của `<Select>`.
 
 ### Quy tắc FEFO & Quản lý tồn kho
 
