@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -9,12 +9,16 @@ import {
   ClipboardList,
   Cross,
   LayoutDashboard,
+  LogOut,
   Pill,
   Settings,
   Truck,
   Warehouse,
   X,
 } from "lucide-react";
+
+import { getCurrentUserAction, logoutAction } from "@/modules/auth/actions/auth.actions";
+import type { SanitizedUser } from "@/modules/auth/types/auth.types";
 
 interface MobileNavDrawerProps {
   isOpen: boolean;
@@ -31,6 +35,16 @@ const navItems = [
 
 export function MobileNavDrawer({ isOpen, onClose }: MobileNavDrawerProps) {
   const pathname = usePathname();
+  const [user, setUser] = useState<SanitizedUser | null>(null);
+
+  useEffect(() => {
+    if (isOpen) {
+      void (async () => {
+        const u = await getCurrentUserAction();
+        setUser(u);
+      })();
+    }
+  }, [isOpen]);
 
   // Close drawer on Escape key
   useEffect(() => {
@@ -118,6 +132,57 @@ export function MobileNavDrawer({ isOpen, onClose }: MobileNavDrawerProps) {
         </nav>
 
         <div className="mobile-drawer-footer">
+          {user ? (
+            <div style={{ marginBottom: 12, paddingBottom: 12, borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
+              <div style={{ color: "#fff", fontWeight: 600, fontSize: 13 }}>{user.name}</div>
+              <div style={{ color: "#94a3b8", fontSize: 12, marginBottom: 8, wordBreak: "break-all" }}>{user.email}</div>
+              <button
+                type="button"
+                className="nav-item"
+                style={{
+                  color: "#f87171",
+                  width: "100%",
+                  background: "rgba(239, 68, 68, 0.1)",
+                  border: "none",
+                  borderRadius: 6,
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 8,
+                  padding: "8px 12px",
+                }}
+                onClick={() => {
+                  onClose();
+                  void logoutAction();
+                }}
+              >
+                <LogOut size={16} />
+                <span>Đăng xuất</span>
+              </button>
+            </div>
+          ) : (
+            <div style={{ marginBottom: 12, paddingBottom: 12, borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
+              <Link
+                href="/login"
+                className="nav-item"
+                onClick={onClose}
+                style={{
+                  color: "var(--brand-primary)",
+                  width: "100%",
+                  background: "rgba(5, 150, 105, 0.1)",
+                  borderRadius: 6,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 8,
+                  padding: "8px 12px",
+                  textDecoration: "none",
+                }}
+              >
+                <span>Đăng nhập tài khoản</span>
+              </Link>
+            </div>
+          )}
+
           <div className="sidebar-health">
             <Activity size={18} aria-hidden="true" />
             <span>

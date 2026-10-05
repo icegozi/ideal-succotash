@@ -28,20 +28,10 @@ export default async function DashboardPage() {
           </p>
         </div>
         <div style={{ display: "flex", gap: 10, zIndex: 1, flexWrap: "wrap" }}>
-          <Link className="btn btn-primary" href="/inventory" style={{ minHeight: 42, padding: "0 18px" }}>
+          <Link className="btn btn-primary btn-lg" href="/inventory">
             Tra cứu tồn kho <ArrowRight size={16} aria-hidden="true" />
           </Link>
-          <Link
-            className="btn btn-secondary"
-            href="/stock-out/new"
-            style={{
-              minHeight: 42,
-              padding: "0 18px",
-              background: "rgba(255, 255, 255, 0.16)",
-              color: "white",
-              borderColor: "rgba(255, 255, 255, 0.35)",
-            }}
-          >
+          <Link className="btn btn-secondary btn-lg" href="/stock-out/new">
             Xuất kho (FEFO)
           </Link>
         </div>

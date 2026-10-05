@@ -186,13 +186,20 @@ icegozi_medstock/
 
 ---
 
-## 6. Identity & Permissions
+## 6. Identity & Authentication
 
-- **Chưa có identity provider**. Schema Oracle không có bảng user/role.
-- Development: `DEV_AUTH_BYPASS=true` → 3 quyền medicine auto-grant.
-- Production: **fail closed** cho đến khi có session adapter.
-- Quyền hiện tại: `medicine.read`, `medicine.create`, `medicine.update`.
-- Quyền dự kiến: `inventory.read`, `receipt.read/create`, `issue.read/create`, `report.read`.
+- **Authentication Module**: Đã triển khai hoàn chỉnh module xác thực nội bộ (native session authentication) phù hợp Next.js 16 App Router.
+- **Session Strategy**: HTTP-only cookie `medstock_session` (`SameSite=Lax`, `Secure` in production, TTL 24h hoặc 30 ngày với Remember Me).
+- **Password Security**: Mã hóa mật khẩu chuẩn ngành bằng `node:crypto.scrypt` kết hợp 16-byte random salt và so sánh hằng định thời gian `crypto.timingSafeEqual` (chống hoàn toàn timing attacks).
+- **Brute-force Protection**: `LoginRateLimiter` giới hạn tối đa 5 lần thử sai / phút theo IP/email.
+- **Session Fixation Mitigation**: Sinh mới session ID 64 ký tự hex ngẫu nhiên (`crypto.randomBytes(32)`) mỗi khi đăng nhập thành công.
+- **Database & Repositories**:
+  - Migration Oracle: `database/migrations/010_auth_users.sql` tạo bảng `APP_USERS` và `APP_SESSIONS`.
+  - `OracleUserRepository`: Thực thi SQL parameterized qua Oracle connection pool.
+  - `InMemoryUserRepository`: Lưu trữ trong bộ nhớ phục vụ unit test và chế độ demo (có sẵn tài khoản `duocsi@medstock.local` / `Duocsi@123` và `admin@medstock.local` / `Admin@123`).
+  - `HybridUserRepository`: Tự động nhận diện Oracle khả dụng hoặc dự phòng sang in-memory khi dev local không chạy container Oracle.
+- **Phân quyền (RBAC)**: Map từ `UserRole` (`ADMIN`, `PHARMACIST`, `WAREHOUSE_STAFF`, `VIEWER`) sang tập quyền `Actor.permissions`.
+- **Route Protection**: `middleware.ts` chuyển hướng Guest về `/login?returnUrl=...`, chuyển hướng Authenticated user khỏi `/login`, `/register` về `/`.
 
 ---
 
@@ -242,19 +249,23 @@ icegozi_medstock/
 5. **Hủy phiếu nhập**: Tạo đảo kho `STOCK_IN_REVERSAL` và bắt buộc kiểm tra `tồn hiện tại >= số lượng nhập` của lô để tránh làm tồn kho âm khi một phần lô đã xuất.
 6. **Near Expiry Config**: Cấu hình tập trung tại `lib/config/inventory.ts` (mặc định 90 ngày).
 
-### Design System & Responsive UI ("Clinical Precision" Theme)
+### Design System & Responsive UI ("Clinical Precision 2.0" Theme)
 
-1. **Brand Identity**: Phong cách Y tế Chính xác (Clinical Precision) với tone màu chủ đạo Teal y tế (`--brand-primary`: #0d9488), slate dark text (`#0f172a`), và nền Slate siêu nhẹ (`#f8fafc`).
-2. **Mobile Navigation**: Màn hình di động (< 780px) dùng `MobileNavDrawer` có backdrop làm mờ, hỗ trợ đóng bằng phím ESC, swipe/click backdrop, giữ kết nối trạng thái Oracle rõ ràng. Topbar hiển thị icon hamburger menu gọn gàng.
-3. **Dual View Table/Card Pattern**: Với các màn hình danh sách nhiều cột (/inventory, /medicines, /stock-in, /stock-out, /inventory/[id]), sử dụng pattern Dual View:
-   - Desktop (>= 780px): Bảng compact chuẩn nghiệp vụ (`.desktop-table-view`).
+1. **Brand Identity**: Phong cách Y tế Chính xác 2.0 (Clinical Precision 2.0) với tone màu chủ đạo Medical Emerald (`--brand-primary`: #059669, hover #047857, active #065f46, soft #ecfdf5, border #a7f3d0), sidebar Deep Hospital Slate (`#0f172a`), text chính Slate 900 (`#0f172a`), và canvas siêu sạch (`#f8fafc`).
+2. **Geometry & Bo góc chuẩn mực**:
+   - **Controls (Button, Input, Select, DateInput, SearchInput)**: Bo góc 8px (`--radius-md`), chiều cao 40px trên desktop và 44px trên mobile, focus ring 2 tầng (`box-shadow: 0 0 0 3px var(--brand-primary-ring)`).
+   - **Badges & StatusBadges**: Chuẩn hóa dạng Thẻ Kỹ thuật bo góc 6px (`--radius-sm`), padding `2.5px 8px`, font 11px/600 uppercase tracking 0.02em (thay thế hoàn toàn pill 9999px cũ nhằm tiết kiệm diện tích cột và tăng mật độ thông tin bảng kho).
+   - **Cards & Panels (`.panel`, `.form-section`, `.detail-card`, `.data-card`)**: Bo góc 12px (`--radius-lg`), viền mảnh 1px (`#e2e8f0`), shadow đa tầng siêu mịn.
+   - **Hero Banner**: Bo góc 16px (`--radius-xl`), dải gradient Emerald sang trọng (`#064e3b` sang `#059669` sang `#0d9488`).
+3. **Branded Controls & Xúc giác**:
+   - `Button`: Hỗ trợ đầy đủ variants (`primary`, `secondary`, `outline`, `ghost`, `danger`), sizes (`sm`, `md`, `lg`), hiệu ứng phản hồi xúc giác `:active:not(:disabled) { transform: scale(0.98); }`, touch target tối thiểu 44px trên mobile.
+   - `Checkbox`: Tùy biến ô vuông 18px bo 4px, đồng bộ màu thương hiệu `accent-color: var(--brand-primary)`, touch area ngón tay chuẩn mobile.
+   - `Select`: Tích hợp custom chevron SVG tinh tế, loại bỏ mũi tên đen/xám mặc định của hệ điều hành.
+4. **Mobile Navigation**: Màn hình di động (< 780px) dùng `MobileNavDrawer` trên nền Deep Slate (`#0f172a`), backdrop làm mờ `rgba(15, 23, 42, 0.65)`, hỗ trợ phím ESC, click backdrop, giữ kết nối trạng thái Oracle rõ ràng. Topbar hiển thị icon hamburger menu gọn gàng.
+5. **Dual View Table/Card Pattern**: Với các màn hình danh sách nhiều cột (/inventory, /medicines, /stock-in, /stock-out, /inventory/[id]), sử dụng pattern Dual View:
+   - Desktop (>= 780px): Bảng compact chuẩn nghiệp vụ (`.desktop-table-view`), header Slate 100 chữ đậm 11px, số liệu canh phải `tabular-nums`.
    - Mobile (< 780px): Chuyển sang danh sách thẻ (`.mobile-card-view` + `.data-card-list`), ưu tiên hiển thị nổi bật số lượng tồn khả dụng, hạn sử dụng và badge cảnh báo.
-4. **Responsive Form Table (Dynamic Rows)**: Không tạo 2 bộ inputs độc lập giữa mobile và desktop vì sẽ gây xung đột đăng ký `useFieldArray` trong React Hook Form. Thay vào đó dùng `.responsive-item-table`:
-   - Trên mobile, `tr` chuyển thành card block có border và padding.
-   - Các `td` chuyển thành hàng dạng flex với `.item-cell-label` hiển thị nhãn tương ứng (tên thuốc, số lô, số lượng, đơn giá...).
-5. **Standardized Primitives**:
-   - `Button`: Hỗ trợ đầy đủ variants (`primary`, `secondary`, `outline`, `ghost`, `danger`), sizes (`sm`, `md`, `lg`), loading spinner tích hợp, và touch target tối thiểu 44px trên mobile.
-   - `Badge` / `StatusBadge`: Chuẩn hóa dạng pill, có chấm màu tròn chỉ định trạng thái (success, warning, danger, neutral, brand, info).
+6. **Responsive Form Table (Dynamic Rows)**: Trong các bảng động của phiếu nhập/xuất, dùng `.responsive-item-table` chuyển thành từng khối card có `.item-cell-label` trên mobile, không nhân đôi input để bảo vệ React Hook Form registration.
 
 
 ---
@@ -316,10 +327,10 @@ Xem `.env.example`. Key variables:
 - [x] Unit tests cho FEFO & Inventory (11 test cases bao quát toàn bộ kịch bản nghiệp vụ)
 - [x] **Common Form Components & Audit**: Chuẩn hóa toàn bộ UI form controls (`FormField`, `Input`, `Textarea`, `Select`, `DateInput`, `SearchInput`, `Checkbox`, `FormSection`) và migrate 100% form nghiệp vụ và filter bars
 - [x] **Responsive Brand UI Makeup ("Clinical Precision")**: Toàn diện hệ thống design tokens, mobile drawer navigation, dual-view (desktop table + mobile card), responsive item table cho form nhập/xuất, chuẩn hóa 100% buttons/badges, pass responsive tests cho cả mobile (< 780px) và desktop.
+- [x] **Authentication Module**: Triển khai hoàn chỉnh Đăng nhập (/login), Đăng ký (/register), Đăng xuất, Session HTTP-only, Zod validation, Chống Brute-force & Session Fixation, Responsive UI, Automated unit tests (32/32 tests pass).
 
 ### 🔲 Chưa làm
 
-- [ ] **Chốt identity provider** → vai trò, maker/checker
 - [ ] Master data modules: Đơn vị tính, Kho, Khoa phòng, Nhà cung cấp
 - [ ] Quản lý quy đổi đơn vị giao dịch
 - [ ] Stock control: kiểm kê, chuyển kho, trả hàng, biệt trữ, thu hồi, hủy, đảo (`PKG_KHO_NANG_CAO`)

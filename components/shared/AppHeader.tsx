@@ -2,9 +2,10 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Bell, ChevronDown, Cross, Menu, Search } from "lucide-react";
+import { Bell, Cross, Menu, Search } from "lucide-react";
 
 import { MobileNavDrawer } from "@/components/shared/MobileNavDrawer";
+import { UserMenu } from "@/modules/auth/components/UserMenu";
 
 export function AppHeader() {
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -41,14 +42,7 @@ export function AppHeader() {
           <button className="icon-button" type="button" aria-label="Thông báo hệ thống">
             <Bell size={19} />
           </button>
-          <button className="profile-button" type="button" aria-label="Hồ sơ người dùng">
-            <span className="avatar">DS</span>
-            <span className="profile-copy">
-              <strong>Dược sĩ</strong>
-              <small>Kho Chẵn / Nội trú</small>
-            </span>
-            <ChevronDown size={15} />
-          </button>
+          <UserMenu />
         </div>
       </header>
 

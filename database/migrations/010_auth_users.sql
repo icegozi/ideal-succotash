@@ -1,0 +1,72 @@
+-- ====================================================================
+-- Migration: 010_auth_users.sql
+-- Description: Creates APP_USERS and APP_SESSIONS tables for MedStock auth
+-- ====================================================================
+
+-- 1. Table APP_USERS
+DECLARE
+  v_count NUMBER;
+BEGIN
+  SELECT COUNT(*) INTO v_count FROM USER_TABLES WHERE TABLE_NAME = 'APP_USERS';
+  IF v_count = 0 THEN
+    EXECUTE IMMEDIATE '
+      CREATE TABLE APP_USERS (
+        USER_ID          NUMBER(10) GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+        HO_TEN           VARCHAR2(100) NOT NULL,
+        EMAIL            VARCHAR2(150) NOT NULL,
+        PASSWORD_HASH    VARCHAR2(255) NOT NULL,
+        VAI_TRO          VARCHAR2(30) DEFAULT ''PHARMACIST'' NOT NULL,
+        KHOA_PHONG       VARCHAR2(100),
+        TRANG_THAI       CHAR(1) DEFAULT ''Y'' NOT NULL,
+        CREATED_AT       TIMESTAMP DEFAULT SYSTIMESTAMP NOT NULL,
+        UPDATED_AT       TIMESTAMP DEFAULT SYSTIMESTAMP NOT NULL,
+        CONSTRAINT CK_APP_USERS_STATUS CHECK (TRANG_THAI IN (''Y'', ''N''))
+      )
+    ';
+  END IF;
+END;
+/
+
+-- Unique index on lower(EMAIL)
+DECLARE
+  v_count NUMBER;
+BEGIN
+  SELECT COUNT(*) INTO v_count FROM USER_INDEXES WHERE INDEX_NAME = 'UX_APP_USERS_EMAIL';
+  IF v_count = 0 THEN
+    EXECUTE IMMEDIATE 'CREATE UNIQUE INDEX UX_APP_USERS_EMAIL ON APP_USERS (LOWER(EMAIL))';
+  END IF;
+END;
+/
+
+-- 2. Table APP_SESSIONS
+DECLARE
+  v_count NUMBER;
+BEGIN
+  SELECT COUNT(*) INTO v_count FROM USER_TABLES WHERE TABLE_NAME = 'APP_SESSIONS';
+  IF v_count = 0 THEN
+    EXECUTE IMMEDIATE '
+      CREATE TABLE APP_SESSIONS (
+        SESSION_ID       VARCHAR2(64) PRIMARY KEY,
+        USER_ID          NUMBER(10) NOT NULL,
+        EXPIRES_AT       TIMESTAMP NOT NULL,
+        CREATED_AT       TIMESTAMP DEFAULT SYSTIMESTAMP NOT NULL,
+        IP_ADDRESS       VARCHAR2(45),
+        USER_AGENT       VARCHAR2(255),
+        CONSTRAINT FK_APP_SESSIONS_USER FOREIGN KEY (USER_ID)
+          REFERENCES APP_USERS (USER_ID) ON DELETE CASCADE
+      )
+    ';
+  END IF;
+END;
+/
+
+-- Index on expires_at for efficient cleanup
+DECLARE
+  v_count NUMBER;
+BEGIN
+  SELECT COUNT(*) INTO v_count FROM USER_INDEXES WHERE INDEX_NAME = 'IX_APP_SESSIONS_EXPIRES';
+  IF v_count = 0 THEN
+    EXECUTE IMMEDIATE 'CREATE INDEX IX_APP_SESSIONS_EXPIRES ON APP_SESSIONS (EXPIRES_AT)';
+  END IF;
+END;
+/

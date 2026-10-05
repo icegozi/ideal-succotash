@@ -1,11 +1,21 @@
+"use client";
+
 import type { ReactNode } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { Activity, Cross } from "lucide-react";
 
 import { AppHeader } from "@/components/shared/AppHeader";
 import { SidebarNav } from "@/components/shared/SidebarNav";
 
 export function AppShell({ children }: { children: ReactNode }) {
+  const pathname = usePathname();
+  const isAuthRoute = pathname === "/login" || pathname === "/register";
+
+  if (isAuthRoute) {
+    return <div className="auth-shell-root">{children}</div>;
+  }
+
   return (
     <div className="app-shell">
       <aside className="sidebar">

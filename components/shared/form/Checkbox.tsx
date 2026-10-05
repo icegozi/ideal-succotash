@@ -16,7 +16,6 @@ export const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
       <label
         className={`checkbox-label ${containerClassName}`.trim()}
         htmlFor={id}
-        style={{ display: "inline-flex", alignItems: "center", gap: 8, cursor: "pointer" }}
       >
         <input
           id={id}
