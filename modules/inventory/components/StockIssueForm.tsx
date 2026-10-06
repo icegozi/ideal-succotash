@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, CheckCircle2, LoaderCircle, Plus, RefreshCw, Save, Trash2 } from "lucide-react";
+import { ArrowLeft, LoaderCircle, Plus, RefreshCw, Save, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
@@ -21,6 +21,7 @@ import {
   Select,
   Textarea,
 } from "@/components/shared/form";
+import { FefoAllocationCard } from "@/components/shared/clinical";
 import { stockIssueInputSchema } from "@/modules/inventory/schemas/inventory.schema";
 import type {
   DepartmentOption,
@@ -50,6 +51,7 @@ export function StockIssueForm({
     control,
     handleSubmit,
     watch,
+    getValues,
     setValue,
     formState: { errors },
   } = useForm<StockIssueInput>({
@@ -115,6 +117,64 @@ export function StockIssueForm({
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedWarehouseId]);
+
+  const handleToggleOverride = (idx: number, batchId: number, isOverride: boolean) => {
+    const currentAllocations = getValues(`items.${idx}.allocations`) || [];
+    const updated = currentAllocations.map((alloc) =>
+      alloc.batchId === batchId
+        ? {
+            ...alloc,
+            isFefoOverride: isOverride,
+            overrideReason: isOverride ? alloc.overrideReason || "" : null,
+          }
+        : alloc,
+    );
+    setValue(`items.${idx}.allocations`, updated);
+    setFefoProposals((prev) => {
+      const existing = prev[idx];
+      if (!existing) return prev;
+      return {
+        ...prev,
+        [idx]: {
+          ...existing,
+          allocations: existing.allocations.map((a) =>
+            a.batchId === batchId
+              ? {
+                  ...a,
+                  isFefoOverride: isOverride,
+                  overrideReason: isOverride ? a.overrideReason || "" : undefined,
+                }
+              : a,
+          ),
+        },
+      };
+    });
+  };
+
+  const handleOverrideReasonChange = (idx: number, batchId: number, reason: string) => {
+    const currentAllocations = getValues(`items.${idx}.allocations`) || [];
+    const updated = currentAllocations.map((alloc) =>
+      alloc.batchId === batchId
+        ? { ...alloc, isFefoOverride: true, overrideReason: reason }
+        : alloc,
+    );
+    setValue(`items.${idx}.allocations`, updated);
+    setFefoProposals((prev) => {
+      const existing = prev[idx];
+      if (!existing) return prev;
+      return {
+        ...prev,
+        [idx]: {
+          ...existing,
+          allocations: existing.allocations.map((a) =>
+            a.batchId === batchId
+              ? { ...a, isFefoOverride: true, overrideReason: reason }
+              : a,
+          ),
+        },
+      };
+    });
+  };
 
   const submit = (values: StockIssueInput) => {
     setActionState({ status: "idle" });
@@ -349,53 +409,29 @@ export function StockIssueForm({
                   </FormField>
                 </div>
 
-                {/* FEFO Allocation Preview Box */}
-                <div className="fefo-preview-card">
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6, flexWrap: "wrap", gap: 6 }}>
-                    <span style={{ fontWeight: 700, color: "var(--brand-primary)" }}>
-                      Phân bổ lô theo FEFO (Hạn dùng gần nhất xuất trước)
-                    </span>
-                    {proposal ? (
-                      <span style={{ fontSize: 12 }}>
-                        Tồn khả dụng: <strong style={{ color: "var(--brand-primary)" }}>{proposal.availableStock.toLocaleString("vi-VN")}</strong> {selectedMed?.baseUnitName}
-                      </span>
-                    ) : null}
-                  </div>
-
+                {/* FEFO Allocation Card */}
+                <div className="mt-3">
                   {isLoading ? (
-                    <div style={{ color: "var(--text-muted)", fontStyle: "italic", padding: "8px 0" }}>
-                      Đang tính toán phân bổ lô tối ưu…
+                    <div className="p-4 text-center text-xs text-slate-500 bg-slate-50/50 rounded-[var(--radius-lg)] border border-[var(--border-default)]">
+                      <LoaderCircle size={20} className="spin mx-auto mb-2 text-teal-600" />
+                      Đang tính toán phân bổ lô tối ưu theo hạn sử dụng…
                     </div>
                   ) : proposal ? (
-                    proposal.insufficient ? (
-                      <div className="notice notice-error" style={{ margin: "6px 0" }}>
-                        Không đủ tồn kho khả dụng! Hiện có: {proposal.availableStock}, yêu cầu: {proposal.requestedQuantity}, thiếu: {proposal.missingQuantity}.
-                      </div>
-                    ) : proposal.allocations.length === 0 ? (
-                      <div style={{ color: "var(--text-muted)", padding: "4px 0" }}>
-                        Không tìm thấy lô khả dụng cho thuốc này trong kho được chọn.
-                      </div>
-                    ) : (
-                      <div style={{ display: "grid", gap: 6, marginTop: 8 }}>
-                        {proposal.allocations.map((alloc) => (
-                          <div key={alloc.batchId} className="fefo-preview-item">
-                            <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-                              <CheckCircle2 size={15} color="var(--brand-primary)" />
-                              <strong>Lô: {alloc.lotNumber}</strong>
-                              <span style={{ color: "var(--text-muted)", fontSize: 11 }}>
-                                (HSD: {alloc.expiryDate})
-                              </span>
-                            </div>
-                            <div>
-                              Xuất: <strong style={{ color: "var(--brand-primary)", fontSize: 13 }}>{alloc.allocatedQuantity.toLocaleString("vi-VN")}</strong> {selectedMed?.baseUnitName}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )
+                    <FefoAllocationCard
+                      medicineName={selectedMed ? selectedMed.name : `Mặt hàng #${idx + 1}`}
+                      medicineCode={selectedMed ? selectedMed.code : ""}
+                      unitName={selectedMed ? selectedMed.baseUnitName : "đơn vị"}
+                      proposal={proposal}
+                      onToggleOverride={(batchId, isOverride) =>
+                        handleToggleOverride(idx, batchId, isOverride)
+                      }
+                      onOverrideReasonChange={(batchId, reason) =>
+                        handleOverrideReasonChange(idx, batchId, reason)
+                      }
+                    />
                   ) : (
-                    <div style={{ color: "var(--text-muted)", padding: "4px 0" }}>
-                      Nhập số lượng để hệ thống tính toán phân bổ FEFO tự động.
+                    <div className="p-3.5 text-xs text-slate-500 bg-slate-50 border border-slate-200 rounded-[var(--radius-lg)] text-center">
+                      Nhập số lượng yêu cầu để hệ thống tính toán và hiển thị thẻ phân bổ FEFO tự động.
                     </div>
                   )}
                 </div>

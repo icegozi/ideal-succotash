@@ -2,6 +2,7 @@ import "server-only";
 
 import { getSessionCookie } from "@/lib/auth/session";
 import { AppError } from "@/lib/errors/app-error";
+import { AUTH_MESSAGES } from "@/constants/messages";
 import { getAuthService } from "@/modules/auth/services";
 import type { SanitizedUser, UserRole } from "@/modules/auth/types/auth.types";
 
@@ -94,7 +95,7 @@ export async function getCurrentActor(): Promise<Actor> {
 
   throw new AppError(
     "UNAUTHORIZED",
-    "Bạn chưa đăng nhập hoặc phiên làm việc đã hết hạn.",
+    AUTH_MESSAGES.SESSION.EXPIRED,
   );
 }
 
@@ -102,7 +103,7 @@ export async function requirePermission(permission: Permission): Promise<Actor> 
   const actor = await getCurrentActor();
 
   if (!actor.permissions.has(permission)) {
-    throw new AppError("FORBIDDEN", "Bạn không có quyền thực hiện thao tác này.");
+    throw new AppError("FORBIDDEN", AUTH_MESSAGES.PERMISSION.DENIED);
   }
 
   return actor;

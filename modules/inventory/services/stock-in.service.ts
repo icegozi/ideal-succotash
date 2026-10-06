@@ -1,5 +1,6 @@
 import { INVENTORY_CONFIG } from "@/lib/config/inventory";
 import { AppError } from "@/lib/errors/app-error";
+import { INVENTORY_MESSAGES } from "@/constants/messages";
 import type { InventoryRepository } from "@/modules/inventory/repositories/inventory.repository";
 import type {
   StockReceipt,
@@ -26,7 +27,7 @@ export class StockInService {
   async getReceiptById(id: number): Promise<StockReceipt> {
     const receipt = await this.repository.getReceiptById(id);
     if (!receipt) {
-      throw new AppError("NOT_FOUND", "Không tìm thấy phiếu nhập kho.");
+      throw new AppError("NOT_FOUND", INVENTORY_MESSAGES.RECEIPT.NOT_FOUND);
     }
     return receipt;
   }
@@ -34,18 +35,18 @@ export class StockInService {
   async createReceipt(input: StockReceiptInput, creatorName: string): Promise<StockReceipt> {
     // Basic service-level validation
     if (!input.items || input.items.length === 0) {
-      throw new AppError("VALIDATION_ERROR", "Phiếu nhập phải có ít nhất 1 mặt hàng.");
+      throw new AppError("VALIDATION_ERROR", INVENTORY_MESSAGES.RECEIPT.MIN_ITEMS);
     }
 
     for (const item of input.items) {
       if (item.quantity <= 0) {
-        throw new AppError("VALIDATION_ERROR", "Số lượng nhập của từng mặt hàng phải lớn hơn 0.");
+        throw new AppError("VALIDATION_ERROR", INVENTORY_MESSAGES.RECEIPT.ITEM_QUANTITY_POSITIVE);
       }
       if (item.manufacturingDate && item.expiryDate) {
         if (new Date(item.manufacturingDate) > new Date(item.expiryDate)) {
           throw new AppError(
             "VALIDATION_ERROR",
-            `Lô ${item.lotNumber}: Ngày sản xuất không được lớn hơn hạn dùng.`,
+            INVENTORY_MESSAGES.RECEIPT.LOT_MFG_DATE_INVALID(item.lotNumber),
           );
         }
       }

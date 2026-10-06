@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 
 import { clearSessionCookie, getSessionCookie, setSessionCookie } from "@/lib/auth/session";
 import { toPublicError } from "@/lib/errors/app-error";
+import { AUTH_MESSAGES } from "@/constants/messages";
 import { loginSchema, registerSchema } from "@/modules/auth/schemas/auth.schema";
 import { getAuthService } from "@/modules/auth/services";
 import type { AuthActionState } from "@/modules/auth/types/auth.types";
@@ -40,7 +41,7 @@ export async function loginAction(
     if (!parsed.success) {
       return {
         status: "error",
-        message: "Vui lòng kiểm tra lại thông tin đăng nhập.",
+        message: AUTH_MESSAGES.LOGIN.INVALID_INPUT,
         fieldErrors: parsed.error.flatten().fieldErrors,
       };
     }
@@ -50,7 +51,7 @@ export async function loginAction(
 
     return {
       status: "success",
-      message: "Đăng nhập thành công!",
+      message: AUTH_MESSAGES.LOGIN.SUCCESS,
       redirectTo: returnUrl,
     };
   } catch (error) {
@@ -72,7 +73,7 @@ export async function registerAction(
     if (!parsed.success) {
       return {
         status: "error",
-        message: "Vui lòng kiểm tra lại các trường được đánh dấu.",
+        message: AUTH_MESSAGES.REGISTER.INVALID_INPUT,
         fieldErrors: parsed.error.flatten().fieldErrors,
       };
     }
@@ -82,7 +83,7 @@ export async function registerAction(
 
     return {
       status: "success",
-      message: "Đăng ký tài khoản thành công!",
+      message: AUTH_MESSAGES.REGISTER.SUCCESS,
       redirectTo: "/",
     };
   } catch (error) {

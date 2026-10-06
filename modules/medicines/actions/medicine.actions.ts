@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 
 import { permissions, requirePermission } from "@/lib/auth/permissions";
 import { toPublicError } from "@/lib/errors/app-error";
+import { MEDICINE_MESSAGES, VALIDATION_MESSAGES } from "@/constants/messages";
 import { medicineInputSchema } from "@/modules/medicines/schemas/medicine.schema";
 import { getMedicineService } from "@/modules/medicines/services";
 
@@ -20,7 +21,7 @@ function validationFailure(
   if (error.success) return null;
   return {
     status: "error",
-    message: "Vui lòng kiểm tra lại các trường được đánh dấu.",
+    message: VALIDATION_MESSAGES.PLEASE_CHECK_INPUT,
     fieldErrors: error.error.flatten().fieldErrors,
   };
 }
@@ -33,7 +34,7 @@ export async function createMedicineAction(input: unknown): Promise<MedicineActi
     if (failure || !parsed.success) return failure!;
     const medicine = await getMedicineService().create(parsed.data);
     revalidatePath("/medicines");
-    return { status: "success", message: "Đã tạo thuốc.", id: medicine.id };
+    return { status: "success", message: MEDICINE_MESSAGES.CREATE.SUCCESS, id: medicine.id };
   } catch (error) {
     return { status: "error", ...toPublicError(error) };
   }
@@ -51,7 +52,7 @@ export async function updateMedicineAction(
     const medicine = await getMedicineService().update(id, parsed.data);
     revalidatePath("/medicines");
     revalidatePath(`/medicines/${id}`);
-    return { status: "success", message: "Đã cập nhật thuốc.", id: medicine.id };
+    return { status: "success", message: MEDICINE_MESSAGES.UPDATE.SUCCESS, id: medicine.id };
   } catch (error) {
     return { status: "error", ...toPublicError(error) };
   }

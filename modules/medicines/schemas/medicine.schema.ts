@@ -1,22 +1,31 @@
 import { z } from "zod";
+import { VALIDATION_MESSAGES, MEDICINE_MESSAGES } from "@/constants/messages";
 
 const optionalText = (max: number) =>
   z
     .string()
     .trim()
-    .max(max, `Tối đa ${max} ký tự.`)
+    .max(max, VALIDATION_MESSAGES.TEXT.MAX_LENGTH(max))
     .transform((value) => value || null);
 
 export const medicineInputSchema = z.object({
-  code: z.string().trim().min(1, "Mã thuốc là bắt buộc.").max(40, "Tối đa 40 ký tự."),
-  name: z.string().trim().min(1, "Tên thuốc là bắt buộc.").max(250, "Tối đa 250 ký tự."),
+  code: z
+    .string()
+    .trim()
+    .min(1, MEDICINE_MESSAGES.VALIDATION.CODE_REQUIRED)
+    .max(40, VALIDATION_MESSAGES.TEXT.MAX_LENGTH(40)),
+  name: z
+    .string()
+    .trim()
+    .min(1, MEDICINE_MESSAGES.VALIDATION.NAME_REQUIRED)
+    .max(250, VALIDATION_MESSAGES.TEXT.MAX_LENGTH(250)),
   activeIngredient: optionalText(250),
   strength: optionalText(100),
   dosageForm: optionalText(100),
   route: optionalText(100),
   manufacturer: optionalText(200),
-  baseUnitId: z.coerce.number().int().positive("Chọn đơn vị cơ sở."),
-  minimumStock: z.coerce.number().min(0, "Tồn tối thiểu không được âm."),
+  baseUnitId: z.coerce.number().int().positive(MEDICINE_MESSAGES.VALIDATION.BASE_UNIT_REQUIRED),
+  minimumStock: z.coerce.number().min(0, MEDICINE_MESSAGES.VALIDATION.MIN_STOCK_NON_NEGATIVE),
   controlled: z.enum(["Y", "N"]),
   active: z.enum(["Y", "N"]),
 });

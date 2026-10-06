@@ -9,6 +9,7 @@ import {
   confirmReceiptAction,
   type InventoryActionState,
 } from "@/modules/inventory/actions/inventory.actions";
+import { CONFIRM_MESSAGES } from "@/constants/messages";
 import { Button } from "@/components/shared/Button";
 import { DocumentStatusBadge } from "@/modules/inventory/components/StockStatusBadge";
 import type { StockReceipt } from "@/modules/inventory/types/inventory.types";
@@ -27,7 +28,7 @@ export function ReceiptDetailView({
   const [actionState, setActionState] = useState<InventoryActionState>({ status: "idle" });
 
   const handleConfirm = () => {
-    if (!confirm("Bạn có chắc chắn muốn xác nhận nhập kho phiếu này? Tồn kho sẽ được cập nhật ngay lập tức.")) {
+    if (!confirm(CONFIRM_MESSAGES.RECEIPT.CONFIRM)) {
       return;
     }
     setActionState({ status: "idle" });
@@ -39,7 +40,7 @@ export function ReceiptDetailView({
   };
 
   const handleCancel = () => {
-    if (!confirm("Bạn có chắc chắn muốn hủy phiếu nhập kho này?")) {
+    if (!confirm(CONFIRM_MESSAGES.RECEIPT.CANCEL)) {
       return;
     }
     setActionState({ status: "idle" });

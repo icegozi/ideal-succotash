@@ -9,6 +9,7 @@ import {
   confirmIssueAction,
   type InventoryActionState,
 } from "@/modules/inventory/actions/inventory.actions";
+import { CONFIRM_MESSAGES } from "@/constants/messages";
 import { Button } from "@/components/shared/Button";
 import { DocumentStatusBadge } from "@/modules/inventory/components/StockStatusBadge";
 import type { StockIssue } from "@/modules/inventory/types/inventory.types";
@@ -27,7 +28,7 @@ export function IssueDetailView({
   const [actionState, setActionState] = useState<InventoryActionState>({ status: "idle" });
 
   const handleConfirm = () => {
-    if (!confirm("Bạn có chắc chắn muốn xác nhận xuất kho phiếu này? Tồn kho sẽ được trừ theo thuật toán FEFO.")) {
+    if (!confirm(CONFIRM_MESSAGES.ISSUE.CONFIRM)) {
       return;
     }
     setActionState({ status: "idle" });
@@ -39,7 +40,7 @@ export function IssueDetailView({
   };
 
   const handleCancel = () => {
-    if (!confirm("Bạn có chắc chắn muốn hủy phiếu xuất kho này?")) {
+    if (!confirm(CONFIRM_MESSAGES.ISSUE.CANCEL)) {
       return;
     }
     setActionState({ status: "idle" });

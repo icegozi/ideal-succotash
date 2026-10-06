@@ -1,4 +1,5 @@
 import { AppError } from "@/lib/errors/app-error";
+import { INVENTORY_MESSAGES } from "@/constants/messages";
 import type {
   FefoAllocationItem,
   FefoCandidateBatch,
@@ -63,7 +64,7 @@ export class FefoAllocationService {
     options?: FefoAllocationOptions,
   ): FefoProposalResult {
     if (requestedQuantity <= 0) {
-      throw new AppError("VALIDATION_ERROR", "Số lượng yêu cầu xuất phải lớn hơn 0.");
+      throw new AppError("VALIDATION_ERROR", INVENTORY_MESSAGES.FEFO.REQUEST_QUANTITY_ISSUE_POSITIVE);
     }
 
     const sortedBatches = this.filterAndSortBatches(candidates, options);
@@ -134,35 +135,39 @@ export class FefoAllocationService {
       if (!batch) {
         throw new AppError(
           "NOT_FOUND",
-          `Không tìm thấy lô thuốc (ID: ${item.batchId}) trong kho.`,
+          INVENTORY_MESSAGES.FEFO.BATCH_NOT_FOUND(item.batchId),
         );
       }
 
       if (batch.status !== "AVAILABLE") {
         throw new AppError(
           "CONFLICT",
-          `Lô ${batch.lotNumber} đang ở trạng thái ${batch.status}, không thể xuất kho.`,
+          INVENTORY_MESSAGES.FEFO.BATCH_NOT_AVAILABLE(batch.lotNumber, batch.status),
         );
       }
 
       if (batch.expiryDate < todayStr) {
         throw new AppError(
           "CONFLICT",
-          `Lô ${batch.lotNumber} đã hết hạn (${batch.expiryDate}), không thể xuất kho.`,
+          INVENTORY_MESSAGES.FEFO.BATCH_EXPIRED(batch.lotNumber, batch.expiryDate),
         );
       }
 
       if (item.allocatedQuantity > batch.availableQuantity) {
         throw new AppError(
           "CONFLICT",
-          `Số lượng xuất của lô ${batch.lotNumber} (${item.allocatedQuantity}) vượt quá tồn khả dụng (${batch.availableQuantity}).`,
+          INVENTORY_MESSAGES.FEFO.BATCH_EXCEEDS_STOCK(
+            batch.lotNumber,
+            item.allocatedQuantity,
+            batch.availableQuantity,
+          ),
         );
       }
 
       if (item.isFefoOverride && (!item.overrideReason || !item.overrideReason.trim())) {
         throw new AppError(
           "VALIDATION_ERROR",
-          `Bắt buộc nhập lý do khi chọn xuất lô không theo thứ tự FEFO (Lô: ${batch.lotNumber}).`,
+          INVENTORY_MESSAGES.FEFO.OVERRIDE_REASON_REQUIRED(batch.lotNumber),
         );
       }
 

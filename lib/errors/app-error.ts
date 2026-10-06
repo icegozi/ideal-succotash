@@ -1,3 +1,5 @@
+import { COMMON_MESSAGES } from "@/constants/messages";
+
 export type AppErrorCode =
   | "VALIDATION_ERROR"
   | "NOT_FOUND"
@@ -29,6 +31,6 @@ export function toPublicError(error: unknown): {
   console.error("Unexpected application error", error);
   return {
     code: "INTERNAL_ERROR",
-    message: "Đã xảy ra lỗi ngoài dự kiến. Vui lòng thử lại.",
+    message: COMMON_MESSAGES.ERROR.UNKNOWN,
   };
 }

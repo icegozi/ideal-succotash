@@ -150,7 +150,28 @@ export class OracleInventoryRepository implements InventoryRepository {
 
       const where = clauses.length ? `WHERE ${clauses.join(" AND ")}` : "";
 
-      const countSql = `
+      const expiryHaving =
+        query.expiryStatus === "EXPIRED"
+          ? "HAVING MIN(l.HAN_SU_DUNG) < TRUNC(SYSDATE)"
+          : query.expiryStatus === "NEAR_EXPIRY"
+            ? "HAVING MIN(l.HAN_SU_DUNG) BETWEEN TRUNC(SYSDATE) AND TRUNC(SYSDATE) + 90"
+            : query.expiryStatus === "NORMAL"
+              ? "HAVING MIN(l.HAN_SU_DUNG) IS NULL OR MIN(l.HAN_SU_DUNG) > TRUNC(SYSDATE) + 90"
+              : "";
+
+      const countSql = expiryHaving
+        ? `
+        SELECT COUNT(*) AS "total"
+        FROM (
+          SELECT t.THUOC_ID, NVL(tk.KHO_ID, 0) AS KHO_ID
+          FROM THUOC t
+          LEFT JOIN LO_THUOC l ON l.THUOC_ID = t.THUOC_ID
+          LEFT JOIN TON_KHO_LO tk ON tk.LO_ID = l.LO_ID
+          ${where}
+          GROUP BY t.THUOC_ID, NVL(tk.KHO_ID, 0)
+          ${expiryHaving}
+        )`
+        : `
         SELECT COUNT(DISTINCT t.THUOC_ID || '-' || NVL(tk.KHO_ID, 0)) AS "total"
         FROM THUOC t
         LEFT JOIN LO_THUOC l ON l.THUOC_ID = t.THUOC_ID
@@ -187,6 +208,7 @@ export class OracleInventoryRepository implements InventoryRepository {
         LEFT JOIN KHO k ON k.KHO_ID = tk.KHO_ID
         ${where}
         GROUP BY t.THUOC_ID, t.MA_THUOC, t.TEN_THUOC, t.HOAT_CHAT, t.HAM_LUONG, d.TEN_DVT, k.KHO_ID, k.TEN_KHO, t.TON_TOI_THIEU
+        ${expiryHaving}
         ORDER BY t.MA_THUOC ASC
         OFFSET :offset ROWS FETCH NEXT :pageSize ROWS ONLY`;
 
