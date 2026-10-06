@@ -1,13 +1,16 @@
 @import "tailwindcss";
 
 :root {
-  /* Brand Tokens — Clinical Precision 2.0 (Medical Emerald & Slate Clinical) */
+  /* Brand Tokens — Clinical Precision 3D (Medical Emerald & Slate Clinical) */
   --brand-primary: #059669;
   --brand-primary-hover: #047857;
   --brand-primary-active: #065f46;
   --brand-primary-soft: #ecfdf5;
   --brand-primary-border: #a7f3d0;
-  --brand-primary-ring: rgba(5, 150, 105, 0.16);
+  --brand-primary-ring: rgba(5, 150, 105, 0.18);
+
+  --brand-secondary: #0f172a;
+  --brand-accent: #0d9488;
 
   /* Surfaces & Canvas */
   --surface-canvas: #f8fafc;
@@ -56,6 +59,26 @@
   --status-neutral-border: #e2e8f0;
   --status-neutral-dot: #94a3b8;
 
+  /* Clinical Specialty Tokens */
+  --status-critical-bg: #fef2f2;
+  --status-critical-text: #991b1b;
+  --status-critical-border: #f87171;
+  --status-critical-dot: #dc2626;
+
+  --fefo-priority-bg: #ecfdf5;
+  --fefo-priority-text: #065f46;
+  --fefo-priority-border: #6ee7b7;
+  --fefo-priority-dot: #10b981;
+
+  --fefo-override-bg: #fffbeb;
+  --fefo-override-text: #92400e;
+  --fefo-override-border: #fcd34d;
+  --fefo-override-dot: #f59e0b;
+
+  --controlled-drug-badge-bg: #fdf2f8;
+  --controlled-drug-badge-text: #9d174d;
+  --controlled-drug-badge-border: #fbcfe8;
+
   /* Geometry & Radii */
   --radius-xs: 4px;
   --radius-sm: 6px;
@@ -70,11 +93,31 @@
   --control-height-lg: 46px;
   --touch-target-min: 44px;
 
-  /* Shadows */
+  /* 3D Elevation & Subtle Depth System */
+  --shadow-elevation-1: 
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.8),
+    0 1px 3px 0 rgba(15, 23, 42, 0.04),
+    0 1px 2px -1px rgba(15, 23, 42, 0.03);
+
+  --shadow-elevation-2: 
+    0 4px 12px -2px rgba(15, 23, 42, 0.08),
+    0 2px 6px -2px rgba(15, 23, 42, 0.04);
+
+  --shadow-elevation-3: 
+    0 10px 25px -5px rgba(15, 23, 42, 0.10),
+    0 6px 10px -4px rgba(15, 23, 42, 0.05);
+
+  --shadow-elevation-4: 
+    0 20px 40px -12px rgba(15, 23, 42, 0.22),
+    0 12px 18px -6px rgba(15, 23, 42, 0.10);
+
+  --shadow-input-inset: inset 0 1px 2px 0 rgba(15, 23, 42, 0.04);
+
+  /* Shadows (Mapped to Elevation System for 100% backward compatibility) */
   --shadow-sm: 0 1px 2px 0 rgba(15, 23, 42, 0.04);
-  --shadow-card: 0 1px 3px 0 rgba(15, 23, 42, 0.05), 0 1px 2px -1px rgba(15, 23, 42, 0.04);
-  --shadow-card-hover: 0 4px 12px -2px rgba(15, 23, 42, 0.08), 0 2px 6px -2px rgba(15, 23, 42, 0.04);
-  --shadow-elevated: 0 12px 28px -6px rgba(15, 23, 42, 0.12), 0 8px 12px -4px rgba(15, 23, 42, 0.06);
+  --shadow-card: var(--shadow-elevation-1);
+  --shadow-card-hover: var(--shadow-elevation-2);
+  --shadow-elevated: var(--shadow-elevation-4);
 
   /* Legacy variable mappings for backward compatibility */
   --ink: var(--text-primary);
@@ -539,13 +582,14 @@ kbd {
   color: white;
   background: var(--brand-primary);
   border-color: var(--brand-primary);
-  box-shadow: 0 1px 3px rgba(5, 150, 105, 0.22), 0 1px 2px rgba(5, 150, 105, 0.12);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25), 0 1px 3px rgba(5, 150, 105, 0.22), 0 1px 2px rgba(5, 150, 105, 0.12);
 }
 
 .btn-primary:hover:not(:disabled), .button-primary:hover:not(:disabled) {
   background: var(--brand-primary-hover);
   border-color: var(--brand-primary-hover);
-  box-shadow: 0 3px 10px rgba(5, 150, 105, 0.28);
+  transform: translateY(-1px);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3), 0 4px 12px rgba(5, 150, 105, 0.28);
 }
 
 .btn-secondary, .button-secondary {
@@ -661,6 +705,36 @@ kbd {
 }
 .badge-neutral .badge-dot, .status-badge.neutral i { background: var(--status-neutral-dot); }
 
+.badge-critical, .tag-critical {
+  color: var(--status-critical-text);
+  background: var(--status-critical-bg);
+  border-color: var(--status-critical-border);
+}
+.badge-critical .badge-dot { background: var(--status-critical-dot); }
+
+.fefo-badge-priority {
+  color: var(--fefo-priority-text);
+  background: var(--fefo-priority-bg);
+  border-color: var(--fefo-priority-border);
+  font-weight: 700;
+}
+.fefo-badge-priority .badge-dot { background: var(--fefo-priority-dot); }
+
+.fefo-badge-override {
+  color: var(--fefo-override-text);
+  background: var(--fefo-override-bg);
+  border-color: var(--fefo-override-border);
+}
+.fefo-badge-override .badge-dot { background: var(--fefo-override-dot); }
+
+.controlled-drug-badge {
+  color: var(--controlled-drug-badge-text);
+  background: var(--controlled-drug-badge-bg);
+  border-color: var(--controlled-drug-badge-border);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
 .muted { color: var(--text-muted); font-size: 11px; }
 
 /* Hero Panel (Dashboard) */
@@ -730,10 +804,20 @@ kbd {
 }
 
 .panel {
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-md);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
   background: var(--surface-card);
-  box-shadow: var(--shadow-card);
+  box-shadow: var(--shadow-elevation-1);
+  transition: transform 150ms ease-out, box-shadow 150ms ease-out;
+}
+
+.panel-interactive {
+  cursor: pointer;
+}
+
+.panel-interactive:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-elevation-2);
 }
 
 /* Metric Cards */
@@ -745,15 +829,16 @@ kbd {
 
 .metric-card {
   padding: 18px 20px;
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-md);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
   background: white;
+  box-shadow: var(--shadow-elevation-1);
   transition: all 0.15s ease;
 }
 
 .metric-card:hover {
   border-color: var(--brand-primary-border);
-  box-shadow: var(--shadow-elevated);
+  box-shadow: var(--shadow-elevation-2);
   transform: translateY(-2px);
 }
 
@@ -922,6 +1007,7 @@ input[type="date"],
   font-size: 13px;
   font-family: inherit;
   box-sizing: border-box;
+  box-shadow: var(--shadow-input-inset);
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
@@ -1864,6 +1950,64 @@ tbody tr:hover { background: #f8fafc; }
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(-4px); }
   to { opacity: 1; transform: translateY(0); }
+}
+
+/* 3D Elevation Utility Classes */
+.elevation-0 { box-shadow: none !important; }
+.elevation-1 { box-shadow: var(--shadow-elevation-1) !important; }
+.elevation-2 { box-shadow: var(--shadow-elevation-2) !important; }
+.elevation-3 { box-shadow: var(--shadow-elevation-3) !important; }
+.elevation-4 { box-shadow: var(--shadow-elevation-4) !important; }
+
+/* Clinical Data Precision Utilities */
+.cell-numeric {
+  text-align: right !important;
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
+}
+
+.cell-batch {
+  font-family: ui-monospace, "JetBrains Mono", SFMono-Regular, Menlo, Monaco, Consolas, monospace !important;
+  font-size: 12.5px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  color: #334155;
+}
+
+.tallman-text {
+  font-weight: 700;
+  letter-spacing: 0.015em;
+}
+
+/* Motion & Micro-interaction Keyframes */
+@keyframes errorShake {
+  0%, 100% { transform: translateX(0); }
+  20%, 60% { transform: translateX(-4px); }
+  40%, 80% { transform: translateX(4px); }
+}
+
+.animate-error-shake {
+  animation: errorShake 0.3s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.skeleton-shimmer {
+  background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite linear;
+}
+
+@keyframes pulseSubtle {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.65; }
+}
+
+.pulse-subtle {
+  animation: pulseSubtle 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 
 @media (prefers-reduced-motion: reduce) {

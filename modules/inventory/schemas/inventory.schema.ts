@@ -1,14 +1,15 @@
 import { z } from "zod";
+import { INVENTORY_MESSAGES, VALIDATION_MESSAGES } from "@/constants/messages";
 
 export const stockReceiptItemInputSchema = z
   .object({
-    medicineId: z.coerce.number().int().positive("Vui lòng chọn thuốc."),
-    lotNumber: z.string().trim().min(1, "Số lô không được để trống."),
+    medicineId: z.coerce.number().int().positive(INVENTORY_MESSAGES.RECEIPT.SELECT_MEDICINE),
+    lotNumber: z.string().trim().min(1, INVENTORY_MESSAGES.RECEIPT.LOT_NUMBER_REQUIRED),
     manufacturingDate: z.string().trim().optional().nullable(),
-    expiryDate: z.string().trim().min(1, "Hạn dùng không được để trống."),
-    quantity: z.coerce.number().positive("Số lượng nhập phải lớn hơn 0."),
-    unitCost: z.coerce.number().min(0, "Đơn giá không được âm.").optional().nullable(),
-    note: z.string().trim().max(500, "Ghi chú tối đa 500 ký tự.").optional().nullable(),
+    expiryDate: z.string().trim().min(1, INVENTORY_MESSAGES.RECEIPT.EXPIRY_DATE_REQUIRED),
+    quantity: z.coerce.number().positive(INVENTORY_MESSAGES.RECEIPT.ITEM_QUANTITY_POSITIVE_FIELD),
+    unitCost: z.coerce.number().min(0, INVENTORY_MESSAGES.RECEIPT.UNIT_COST_NON_NEGATIVE).optional().nullable(),
+    note: z.string().trim().max(500, VALIDATION_MESSAGES.TEXT.MAX_LENGTH(500)).optional().nullable(),
   })
   .refine(
     (item) => {
@@ -18,25 +19,25 @@ export const stockReceiptItemInputSchema = z
       return true;
     },
     {
-      message: "Ngày sản xuất phải nhỏ hơn hoặc bằng hạn dùng.",
+      message: VALIDATION_MESSAGES.DATE.MFG_LE_EXP,
       path: ["manufacturingDate"],
     },
   );
 
 export const stockReceiptInputSchema = z.object({
   receiptCode: z.string().trim().optional(),
-  warehouseId: z.coerce.number().int().positive("Vui lòng chọn kho nhận."),
-  supplierId: z.coerce.number().int().positive("Vui lòng chọn nhà cung cấp."),
-  receiptDate: z.string().trim().min(1, "Vui lòng chọn ngày nhập."),
-  documentNumber: z.string().trim().max(100, "Số chứng từ tối đa 100 ký tự.").optional().nullable(),
-  note: z.string().trim().max(1000, "Ghi chú tối đa 1000 ký tự.").optional().nullable(),
-  items: z.array(stockReceiptItemInputSchema).min(1, "Phiếu nhập phải có ít nhất 1 mặt hàng."),
+  warehouseId: z.coerce.number().int().positive(INVENTORY_MESSAGES.RECEIPT.SELECT_WAREHOUSE),
+  supplierId: z.coerce.number().int().positive(INVENTORY_MESSAGES.RECEIPT.SELECT_SUPPLIER),
+  receiptDate: z.string().trim().min(1, INVENTORY_MESSAGES.RECEIPT.SELECT_DATE),
+  documentNumber: z.string().trim().max(100, VALIDATION_MESSAGES.TEXT.MAX_LENGTH(100)).optional().nullable(),
+  note: z.string().trim().max(1000, VALIDATION_MESSAGES.TEXT.MAX_LENGTH(1000)).optional().nullable(),
+  items: z.array(stockReceiptItemInputSchema).min(1, INVENTORY_MESSAGES.RECEIPT.MIN_ITEMS),
 });
 
 export const stockIssueItemInputSchema = z.object({
-  medicineId: z.coerce.number().int().positive("Vui lòng chọn thuốc."),
-  requestedQuantity: z.coerce.number().positive("Số lượng xuất phải lớn hơn 0."),
-  note: z.string().trim().max(500, "Ghi chú tối đa 500 ký tự.").optional().nullable(),
+  medicineId: z.coerce.number().int().positive(INVENTORY_MESSAGES.ISSUE.SELECT_MEDICINE),
+  requestedQuantity: z.coerce.number().positive(INVENTORY_MESSAGES.ISSUE.ITEM_QUANTITY_POSITIVE_FIELD),
+  note: z.string().trim().max(500, VALIDATION_MESSAGES.TEXT.MAX_LENGTH(500)).optional().nullable(),
   allocations: z
     .array(
       z.object({
@@ -51,10 +52,10 @@ export const stockIssueItemInputSchema = z.object({
 
 export const stockIssueInputSchema = z.object({
   issueCode: z.string().trim().optional(),
-  warehouseId: z.coerce.number().int().positive("Vui lòng chọn kho xuất."),
+  warehouseId: z.coerce.number().int().positive(INVENTORY_MESSAGES.ISSUE.SELECT_WAREHOUSE),
   departmentId: z.coerce.number().int().positive().optional().nullable(),
-  receiver: z.string().trim().min(1, "Người nhận / Đơn vị nhận không được để trống."),
-  issueDate: z.string().trim().min(1, "Vui lòng chọn ngày xuất."),
+  receiver: z.string().trim().min(1, INVENTORY_MESSAGES.ISSUE.RECEIVER_REQUIRED),
+  issueDate: z.string().trim().min(1, INVENTORY_MESSAGES.ISSUE.SELECT_DATE),
   issueType: z.enum([
     "DEPARTMENT_ISSUE",
     "PATIENT_ISSUE",
@@ -62,8 +63,8 @@ export const stockIssueInputSchema = z.object({
     "DISPOSAL",
     "OTHER",
   ]),
-  note: z.string().trim().max(1000, "Ghi chú tối đa 1000 ký tự.").optional().nullable(),
-  items: z.array(stockIssueItemInputSchema).min(1, "Phiếu xuất phải có ít nhất 1 mặt hàng."),
+  note: z.string().trim().max(1000, VALIDATION_MESSAGES.TEXT.MAX_LENGTH(1000)).optional().nullable(),
+  items: z.array(stockIssueItemInputSchema).min(1, INVENTORY_MESSAGES.ISSUE.MIN_ITEMS),
 });
 
 export type StockReceiptInputValues = z.input<typeof stockReceiptInputSchema>;

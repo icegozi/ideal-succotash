@@ -1,4 +1,5 @@
 import { AppError } from "@/lib/errors/app-error";
+import { MEDICINE_MESSAGES } from "@/constants/messages";
 import type { MedicineRepository } from "@/modules/medicines/repositories/medicine.repository";
 import {
   medicineInputSchema,
@@ -16,10 +17,10 @@ export class MedicineService {
 
   async getById(id: number) {
     if (!Number.isInteger(id) || id <= 0) {
-      throw new AppError("NOT_FOUND", "Không tìm thấy thuốc.");
+      throw new AppError("NOT_FOUND", MEDICINE_MESSAGES.ERROR.NOT_FOUND);
     }
     const medicine = await this.repository.findById(id);
-    if (!medicine) throw new AppError("NOT_FOUND", "Không tìm thấy thuốc.");
+    if (!medicine) throw new AppError("NOT_FOUND", MEDICINE_MESSAGES.ERROR.NOT_FOUND);
     return medicine;
   }
 
@@ -33,19 +34,19 @@ export class MedicineService {
 
   async update(id: number, input: unknown) {
     if (!Number.isInteger(id) || id <= 0) {
-      throw new AppError("NOT_FOUND", "Không tìm thấy thuốc.");
+      throw new AppError("NOT_FOUND", MEDICINE_MESSAGES.ERROR.NOT_FOUND);
     }
     const parsed = medicineInputSchema.parse(input);
     const existing = await this.repository.findById(id);
-    if (!existing) throw new AppError("NOT_FOUND", "Không tìm thấy thuốc.");
+    if (!existing) throw new AppError("NOT_FOUND", MEDICINE_MESSAGES.ERROR.NOT_FOUND);
     if (existing.baseUnitId !== parsed.baseUnitId) {
       throw new AppError(
         "CONFLICT",
-        "Không đổi đơn vị cơ sở trong màn hình chỉnh sửa. Hãy cấu hình quy đổi qua quy trình chuyên biệt.",
+        MEDICINE_MESSAGES.ERROR.CANNOT_CHANGE_BASE_UNIT,
       );
     }
     const medicine = await this.repository.update(id, parsed);
-    if (!medicine) throw new AppError("NOT_FOUND", "Không tìm thấy thuốc.");
+    if (!medicine) throw new AppError("NOT_FOUND", MEDICINE_MESSAGES.ERROR.NOT_FOUND);
     return medicine;
   }
 }

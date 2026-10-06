@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 
 import { getCurrentActor, permissions, requirePermission } from "@/lib/auth/permissions";
 import { toPublicError } from "@/lib/errors/app-error";
+import { INVENTORY_MESSAGES } from "@/constants/messages";
 import {
   stockIssueInputSchema,
   stockReceiptInputSchema,
@@ -28,7 +29,7 @@ export async function createReceiptAction(input: unknown): Promise<InventoryActi
     if (!parsed.success) {
       return {
         status: "error",
-        message: "Vui lòng kiểm tra lại thông tin phiếu nhập.",
+        message: INVENTORY_MESSAGES.RECEIPT.INVALID_INPUT,
         fieldErrors: parsed.error.flatten().fieldErrors,
       };
     }
@@ -36,7 +37,7 @@ export async function createReceiptAction(input: unknown): Promise<InventoryActi
     const receipt = await getStockInService().createReceipt(parsed.data, actor.name);
     revalidatePath("/stock-in");
     revalidatePath("/inventory");
-    return { status: "success", message: "Đã tạo phiếu nhập kho.", id: receipt.id };
+    return { status: "success", message: INVENTORY_MESSAGES.RECEIPT.CREATE_SUCCESS, id: receipt.id };
   } catch (error) {
     return { status: "error", ...toPublicError(error) };
   }
@@ -49,7 +50,7 @@ export async function confirmReceiptAction(id: number): Promise<InventoryActionS
     revalidatePath("/stock-in");
     revalidatePath(`/stock-in/${id}`);
     revalidatePath("/inventory");
-    return { status: "success", message: "Đã xác nhận nhập kho thành công.", id: receipt.id };
+    return { status: "success", message: INVENTORY_MESSAGES.RECEIPT.CONFIRM_SUCCESS, id: receipt.id };
   } catch (error) {
     return { status: "error", ...toPublicError(error) };
   }
@@ -62,7 +63,7 @@ export async function cancelReceiptAction(id: number): Promise<InventoryActionSt
     revalidatePath("/stock-in");
     revalidatePath(`/stock-in/${id}`);
     revalidatePath("/inventory");
-    return { status: "success", message: "Đã hủy phiếu nhập kho.", id: receipt.id };
+    return { status: "success", message: INVENTORY_MESSAGES.RECEIPT.CANCEL_SUCCESS, id: receipt.id };
   } catch (error) {
     return { status: "error", ...toPublicError(error) };
   }
@@ -75,7 +76,7 @@ export async function createIssueAction(input: unknown): Promise<InventoryAction
     if (!parsed.success) {
       return {
         status: "error",
-        message: "Vui lòng kiểm tra lại thông tin phiếu xuất.",
+        message: INVENTORY_MESSAGES.ISSUE.INVALID_INPUT,
         fieldErrors: parsed.error.flatten().fieldErrors,
       };
     }
@@ -83,7 +84,7 @@ export async function createIssueAction(input: unknown): Promise<InventoryAction
     const issue = await getStockOutService().createIssue(parsed.data, actor.name);
     revalidatePath("/stock-out");
     revalidatePath("/inventory");
-    return { status: "success", message: "Đã tạo phiếu xuất kho.", id: issue.id };
+    return { status: "success", message: INVENTORY_MESSAGES.ISSUE.CREATE_SUCCESS, id: issue.id };
   } catch (error) {
     return { status: "error", ...toPublicError(error) };
   }
@@ -96,7 +97,7 @@ export async function confirmIssueAction(id: number): Promise<InventoryActionSta
     revalidatePath("/stock-out");
     revalidatePath(`/stock-out/${id}`);
     revalidatePath("/inventory");
-    return { status: "success", message: "Đã xác nhận xuất kho thành công.", id: issue.id };
+    return { status: "success", message: INVENTORY_MESSAGES.ISSUE.CONFIRM_SUCCESS, id: issue.id };
   } catch (error) {
     return { status: "error", ...toPublicError(error) };
   }
@@ -109,7 +110,7 @@ export async function cancelIssueAction(id: number): Promise<InventoryActionStat
     revalidatePath("/stock-out");
     revalidatePath(`/stock-out/${id}`);
     revalidatePath("/inventory");
-    return { status: "success", message: "Đã hủy phiếu xuất kho.", id: issue.id };
+    return { status: "success", message: INVENTORY_MESSAGES.ISSUE.CANCEL_SUCCESS, id: issue.id };
   } catch (error) {
     return { status: "error", ...toPublicError(error) };
   }

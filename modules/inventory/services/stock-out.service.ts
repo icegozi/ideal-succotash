@@ -1,5 +1,6 @@
 import { INVENTORY_CONFIG } from "@/lib/config/inventory";
 import { AppError } from "@/lib/errors/app-error";
+import { INVENTORY_MESSAGES } from "@/constants/messages";
 import type { InventoryRepository } from "@/modules/inventory/repositories/inventory.repository";
 import { FefoAllocationService } from "@/modules/inventory/services/fefo-allocation.service";
 import type {
@@ -31,7 +32,7 @@ export class StockOutService {
   async getIssueById(id: number): Promise<StockIssue> {
     const issue = await this.repository.getIssueById(id);
     if (!issue) {
-      throw new AppError("NOT_FOUND", "Không tìm thấy phiếu xuất kho.");
+      throw new AppError("NOT_FOUND", INVENTORY_MESSAGES.ISSUE.NOT_FOUND);
     }
     return issue;
   }
@@ -45,7 +46,7 @@ export class StockOutService {
     requestedQuantity: number,
   ): Promise<FefoProposalResult> {
     if (requestedQuantity <= 0) {
-      throw new AppError("VALIDATION_ERROR", "Số lượng yêu cầu phải lớn hơn 0.");
+      throw new AppError("VALIDATION_ERROR", INVENTORY_MESSAGES.FEFO.REQUEST_QUANTITY_POSITIVE);
     }
 
     const candidates = await this.repository.getCandidateBatchesForFefo(
@@ -62,12 +63,12 @@ export class StockOutService {
 
   async createIssue(input: StockIssueInput, creatorName: string): Promise<StockIssue> {
     if (!input.items || input.items.length === 0) {
-      throw new AppError("VALIDATION_ERROR", "Phiếu xuất phải có ít nhất 1 mặt hàng.");
+      throw new AppError("VALIDATION_ERROR", INVENTORY_MESSAGES.ISSUE.MIN_ITEMS);
     }
 
     for (const item of input.items) {
       if (item.requestedQuantity <= 0) {
-        throw new AppError("VALIDATION_ERROR", "Số lượng xuất của từng mặt hàng phải lớn hơn 0.");
+        throw new AppError("VALIDATION_ERROR", INVENTORY_MESSAGES.ISSUE.ITEM_QUANTITY_POSITIVE);
       }
     }
 

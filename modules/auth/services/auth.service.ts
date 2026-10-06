@@ -3,6 +3,7 @@ import { randomBytes } from "node:crypto";
 import { hashPassword, verifyPassword } from "@/lib/auth/password";
 import { type LoginRateLimiter, loginRateLimiter } from "@/lib/auth/rate-limiter";
 import { AppError } from "@/lib/errors/app-error";
+import { AUTH_MESSAGES } from "@/constants/messages";
 import type { UserRepository } from "@/modules/auth/repositories/user.repository";
 import type { LoginInput, RegisterInput } from "@/modules/auth/schemas/auth.schema";
 import {
@@ -40,7 +41,7 @@ export class AuthService {
 
     const existing = await this.userRepository.findByEmail(normalizedEmail);
     if (existing) {
-      throw new AppError("CONFLICT", "Email này đã được sử dụng trong hệ thống.");
+      throw new AppError("CONFLICT", AUTH_MESSAGES.REGISTER.EMAIL_EXISTS);
     }
 
     const passwordHash = await hashPassword(input.password);
@@ -79,18 +80,18 @@ export class AuthService {
     if (rateCheck.isBlocked) {
       throw new AppError(
         "UNAUTHORIZED",
-        `Quá nhiều lần thử đăng nhập không thành công. Vui lòng thử lại sau ${rateCheck.retryAfterSeconds} giây.`,
+        AUTH_MESSAGES.LOGIN.RATE_LIMITED(rateCheck.retryAfterSeconds),
       );
     }
 
     const user = await this.userRepository.findByEmail(normalizedEmail);
     if (!user) {
       this.rateLimiter.recordFailure(normalizedEmail);
-      throw new AppError("UNAUTHORIZED", "Email hoặc mật khẩu không chính xác.");
+      throw new AppError("UNAUTHORIZED", AUTH_MESSAGES.LOGIN.FAILED);
     }
 
     if (!user.active) {
-      throw new AppError("UNAUTHORIZED", "Tài khoản của bạn đã bị khóa hoặc ngừng hoạt động.");
+      throw new AppError("UNAUTHORIZED", AUTH_MESSAGES.LOGIN.LOCKED);
     }
 
     const isMatch = await verifyPassword(input.password, user.passwordHash);
@@ -99,10 +100,10 @@ export class AuthService {
       if (failStatus.isBlocked) {
         throw new AppError(
           "UNAUTHORIZED",
-          `Quá nhiều lần thử đăng nhập không thành công. Vui lòng thử lại sau ${failStatus.retryAfterSeconds} giây.`,
+          AUTH_MESSAGES.LOGIN.RATE_LIMITED(failStatus.retryAfterSeconds),
         );
       }
-      throw new AppError("UNAUTHORIZED", "Email hoặc mật khẩu không chính xác.");
+      throw new AppError("UNAUTHORIZED", AUTH_MESSAGES.LOGIN.FAILED);
     }
 
     // Reset rate limiter on successful authentication
