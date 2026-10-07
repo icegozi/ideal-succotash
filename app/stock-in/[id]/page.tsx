@@ -33,7 +33,7 @@ export default async function StockReceiptDetailPage({ params }: PageProps) {
     <div className="page-stack">
       <PageHeader
         title={`Phiếu nhập kho: ${receipt.receiptCode}`}
-        description="Chi tiết các mặt hàng thuốc, số lô, hạn dùng và trạng thái xác nhận nhập tồn."
+        description="Chi tiết thuốc, lô hàng và trạng thái nhập kho."
         parent={{ href: "/stock-in", label: "Nhập kho" }}
       />
 

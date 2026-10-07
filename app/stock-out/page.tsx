@@ -75,7 +75,7 @@ export default async function StockOutListPage({ searchParams }: { searchParams:
     <div className="page-stack">
       <PageHeader
         title="Xuất kho dược phẩm (FEFO)"
-        description="Xuất cấp phát thuốc theo thuật toán FEFO (First Expired, First Out) đảm bảo xuất lô có hạn dùng gần nhất trước."
+        description="Quản lý phiếu xuất và cấp phát thuốc theo FEFO."
         actions={
           canCreate ? (
             <Link className="btn btn-primary" href="/stock-out/new">
@@ -283,7 +283,6 @@ export default async function StockOutListPage({ searchParams }: { searchParams:
               <ClipboardList size={24} />
             </span>
             <h3>Không tìm thấy phiếu xuất nào</h3>
-            <p>Thử thay đổi bộ lọc tìm kiếm hoặc tạo phiếu xuất mới.</p>
           </div>
         )}
 

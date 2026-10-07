@@ -944,20 +944,92 @@ kbd {
 /* Page Header */
 .page-header {
   display: flex;
-  align-items: flex-end;
+  align-items: center;
   justify-content: space-between;
-  gap: 20px;
+  gap: 16px;
+  padding: 8px 0 16px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.page-header-copy {
+  flex: 1;
+  min-width: 0;
+}
+
+.page-header-heading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .page-header h1 {
-  margin: 8px 0 4px;
-  font-size: 26px;
-  line-height: 1.15;
-  letter-spacing: -0.03em;
+  margin: 0;
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1.4;
+  letter-spacing: -0.025em;
   color: var(--text-primary);
+  overflow-wrap: anywhere;
 }
 
-.page-header > div > p { margin: 0; color: var(--text-muted); font-size: 13px; }
+.page-header-copy > p {
+  margin: 4px 0 0;
+  color: var(--text-muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.page-header-back {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: var(--control-height-sm);
+  height: var(--control-height-sm);
+  border-radius: var(--radius-sm);
+  color: var(--text-muted);
+}
+
+.page-header-back:hover {
+  color: var(--text-primary);
+  background: var(--surface-hover);
+}
+
+.page-header-back:focus-visible {
+  outline: 2px solid var(--brand-primary);
+  outline-offset: 2px;
+}
+
+.page-header .page-actions {
+  flex-shrink: 0;
+  max-width: 100%;
+}
+
+.page-header .page-actions > div:not(.quick-actions-container) {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.page-header .btn,
+.page-header .button {
+  min-height: var(--control-height-sm);
+  padding: 0 12px;
+  font-size: 12px;
+}
+
+@media (min-width: 640px) {
+  .page-header h1 {
+    font-size: 24px;
+    line-height: 1.333333;
+  }
+
+  .page-header-copy > p {
+    font-size: 13px;
+  }
+}
+
 .breadcrumb {
   display: flex;
   align-items: center;
@@ -1688,6 +1760,14 @@ tbody tr:hover { background: #f8fafc; }
     align-items: flex-start;
     flex-direction: column;
     gap: 12px;
+  }
+  .page-header-copy { width: 100%; }
+  .page-header-back {
+    width: var(--touch-target-min);
+    height: var(--touch-target-min);
+  }
+  .page-header .btn, .page-header .button {
+    min-height: var(--touch-target-min);
   }
   .page-actions, .button-row {
     width: 100%;

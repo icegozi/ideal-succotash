@@ -47,15 +47,6 @@ export function MedicineEmptyState({
       <h3 className="text-base font-semibold text-slate-900 mb-1">
         Chưa có thuốc trong danh mục
       </h3>
-      {canCreate && (
-        <Link
-          href="/medicines/new"
-          className="btn btn-primary btn-sm inline-flex items-center gap-1.5"
-        >
-          <Plus size={15} aria-hidden="true" />
-          <span>Thêm thuốc mới</span>
-        </Link>
-      )}
     </div>
   );
 }

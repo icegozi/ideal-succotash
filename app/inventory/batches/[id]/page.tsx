@@ -40,7 +40,7 @@ export default async function BatchTraceabilityPage({ params }: PageProps) {
     <div className="page-stack">
       <PageHeader
         title={`Truy vết lô thuốc: ${batch.lotNumber}`}
-        description={`Hồ sơ vòng đời và lịch sử biến động kho của lô thuốc ${batch.medicineName}.`}
+        description={`Lịch sử nhập, xuất và tồn kho · ${batch.medicineName}`}
         parent={{ href: "/inventory", label: "Tồn kho" }}
         actions={
           <div className="button-row">

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { connection } from "next/server";
-import { ArrowLeft, Building2, CheckCircle2, Pencil, Pill, Route, Scale, ShieldAlert } from "lucide-react";
+import { Building2, CheckCircle2, Pencil, Pill, Route, Scale, ShieldAlert } from "lucide-react";
 
 import { PageHeader } from "@/components/shared/PageHeader";
 import { Badge } from "@/components/shared/Badge";
@@ -33,16 +33,11 @@ export default async function MedicineDetailPage({ params }: { params: Promise<{
         description={`Mã thuốc ${medicine.code}`}
         parent={{ href: "/medicines", label: "Danh mục thuốc" }}
         actions={
-          <div className="button-row">
-            <Link className="btn btn-secondary" href="/medicines">
-              <ArrowLeft size={16} /> Danh sách
+          canUpdate ? (
+            <Link className="btn btn-primary" href={`/medicines/${id}/edit`}>
+              <Pencil size={15} /> Chỉnh sửa
             </Link>
-            {canUpdate ? (
-              <Link className="btn btn-primary" href={`/medicines/${id}/edit`}>
-                <Pencil size={15} /> Chỉnh sửa
-              </Link>
-            ) : null}
-          </div>
+          ) : undefined
         }
       />
 

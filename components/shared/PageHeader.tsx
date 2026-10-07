@@ -1,7 +1,34 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
-import { ChevronRight, Home } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 
-export function PageHeader({ title, description, actions, parent }: { title: string; description?: string; actions?: ReactNode; parent?: { href: string; label: string } }) {
-  return <header className="page-header"><div><nav className="breadcrumb" aria-label="Breadcrumb"><Link href="/" aria-label="Trang chủ"><Home size={14} /></Link><ChevronRight size={13} />{parent ? <><Link href={parent.href}>{parent.label}</Link><ChevronRight size={13} /></> : null}<span aria-current="page">{title}</span></nav><h1>{title}</h1>{description ? <p>{description}</p> : null}</div>{actions ? <div className="page-actions">{actions}</div> : null}</header>;
+interface PageHeaderProps {
+  title: string;
+  description?: string;
+  actions?: ReactNode;
+  parent?: { href: string; label: string };
+}
+
+export function PageHeader({ title, description, actions, parent }: PageHeaderProps) {
+  return (
+    <header className="page-header">
+      <div className="page-header-copy">
+        <div className="page-header-heading">
+          {parent && (
+            <Link
+              className="page-header-back"
+              href={parent.href}
+              aria-label={`Quay lại ${parent.label}`}
+              title={`Quay lại ${parent.label}`}
+            >
+              <ArrowLeft size={17} aria-hidden="true" />
+            </Link>
+          )}
+          <h1>{title}</h1>
+        </div>
+        {description && <p>{description}</p>}
+      </div>
+      {actions && <div className="page-actions">{actions}</div>}
+    </header>
+  );
 }

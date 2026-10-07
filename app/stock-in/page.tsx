@@ -63,7 +63,7 @@ export default async function StockInListPage({ searchParams }: { searchParams: 
     <div className="page-stack">
       <PageHeader
         title="Nhập kho dược phẩm"
-        description="Quản lý các phiếu nhập kho từ nhà cung cấp, kiểm soát số lô, hạn dùng và cập nhật tồn kho tự động."
+        description="Quản lý phiếu nhập, nhà cung cấp và lô thuốc."
         actions={
           canCreate ? (
             <Link className="btn btn-primary" href="/stock-in/new">
@@ -253,7 +253,6 @@ export default async function StockInListPage({ searchParams }: { searchParams: 
               <Truck size={24} />
             </span>
             <h3>Không tìm thấy phiếu nhập nào</h3>
-            <p>Thử thay đổi bộ lọc tìm kiếm hoặc tạo phiếu nhập mới.</p>
           </div>
         )}
 

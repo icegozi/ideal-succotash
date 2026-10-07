@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { connection } from "next/server";
-import { ArrowLeft, Boxes, Eye, Pill, ShieldCheck, Zap } from "lucide-react";
+import { Boxes, Eye, Pill, ShieldCheck, Zap } from "lucide-react";
 
 import { PageHeader } from "@/components/shared/PageHeader";
 import { requirePermission, permissions } from "@/lib/auth/permissions";
@@ -48,17 +48,12 @@ export default async function MedicineInventoryDetailPage({
     <div className="page-stack">
       <PageHeader
         title={`Chi tiết tồn kho: ${medicine.name}`}
-        description="Danh sách các lô thuốc thực tế trong kho, sắp xếp ưu tiên theo FEFO (hạn dùng gần nhất xuất trước)."
+        description="Tồn kho từng lô, ưu tiên hạn dùng gần nhất theo FEFO."
         parent={{ href: "/inventory", label: "Tồn kho" }}
         actions={
-          <div className="button-row">
-            <Link className="btn btn-secondary" href="/inventory">
-              <ArrowLeft size={16} /> Quay lại tồn kho
-            </Link>
-            <Link className="btn btn-primary" href="/stock-out/new">
-              Tạo phiếu xuất thuốc này
-            </Link>
-          </div>
+          <Link className="btn btn-primary" href="/stock-out/new">
+            Tạo phiếu xuất thuốc này
+          </Link>
         }
       />
 

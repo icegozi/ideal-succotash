@@ -81,7 +81,7 @@ export default async function MedicinesPage({ searchParams }: { searchParams: Se
       {/* 1. Page Header with compact actions */}
       <PageHeader
         title="Danh mục thuốc"
-        description="Quản lý danh mục dược phẩm, hoạt chất, quy chế kiểm soát và định mức tồn an toàn."
+        description="Quản lý thuốc, hoạt chất và định mức tồn kho."
         actions={
           <div className="flex items-center gap-2">
             <Link

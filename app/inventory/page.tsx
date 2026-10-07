@@ -66,7 +66,7 @@ export default async function InventoryPage({ searchParams }: { searchParams: Se
     <div className="page-stack">
       <PageHeader
         title="Tồn kho thuốc"
-        description="Quản lý tồn kho theo mô hình FEFO (First Expired, First Out), theo dõi hạn sử dụng và truy vết từng lô thuốc."
+        description="Theo dõi tồn kho, hạn dùng và các lô thuốc."
         actions={
           <div className="button-row">
             <Link className="btn btn-secondary" href="/stock-in">
@@ -373,7 +373,6 @@ export default async function InventoryPage({ searchParams }: { searchParams: Se
               <Package size={24} />
             </span>
             <h3>Không tìm thấy dữ liệu tồn kho</h3>
-            <p>Thử thay đổi từ khóa hoặc bộ lọc kho / hạn dùng hiện tại.</p>
           </div>
         )}
 

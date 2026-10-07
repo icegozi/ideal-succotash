@@ -23,7 +23,7 @@ export default async function NewStockIssuePage() {
     <div className="page-stack narrow-page">
       <PageHeader
         title="Tạo phiếu xuất kho"
-        description="Xuất thuốc theo lô tự động theo FEFO (lô hạn dùng gần nhất được ưu tiên cấp phát)."
+        description="Cấp phát thuốc theo FEFO, ưu tiên lô có hạn dùng gần nhất."
         parent={{ href: "/stock-out", label: "Xuất kho" }}
       />
 

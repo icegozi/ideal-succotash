@@ -33,7 +33,7 @@ export default async function StockIssueDetailPage({ params }: PageProps) {
     <div className="page-stack">
       <PageHeader
         title={`Phiếu xuất kho: ${issue.issueCode}`}
-        description="Chi tiết các mặt hàng thuốc, số lượng yêu cầu và các lô thuốc được phân bổ xuất theo FEFO."
+        description="Chi tiết số lượng xuất và phân bổ lô theo FEFO."
         parent={{ href: "/stock-out", label: "Xuất kho" }}
       />
 
