@@ -1,15 +1,19 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { connection } from "next/server";
-import { ArrowRight, ChevronLeft, ChevronRight, Eye, Pencil, Pill, Plus, SlidersHorizontal } from "lucide-react";
+import { ChevronLeft, ChevronRight, PackageSearch, Plus } from "lucide-react";
 
 import { PageHeader } from "@/components/shared/PageHeader";
-import { Badge } from "@/components/shared/Badge";
-import { StatusBadge } from "@/components/shared/StatusBadge";
-import { SearchInput, Select } from "@/components/shared/form";
 import { can, permissions, requirePermission } from "@/lib/auth/permissions";
 import { getMedicineService } from "@/modules/medicines/services";
+import { getInventoryService } from "@/modules/inventory/services";
 import type { MedicineListQuery } from "@/modules/medicines/types/medicine.types";
+import {
+  MedicineStatsOverview,
+  MedicineFilterBar,
+  MedicineTable,
+  MedicineEmptyState,
+} from "@/modules/medicines/components";
 
 export const metadata: Metadata = { title: "Danh mục thuốc" };
 
@@ -25,6 +29,7 @@ function pageHref(params: URLSearchParams, page: number) {
 export default async function MedicinesPage({ searchParams }: { searchParams: SearchParams }) {
   await connection();
   await requirePermission(permissions.medicineRead);
+
   const raw = await searchParams;
   const query: MedicineListQuery = {
     query: one(raw.query),
@@ -35,11 +40,36 @@ export default async function MedicinesPage({ searchParams }: { searchParams: Se
     page: Number(one(raw.page) || 1),
     pageSize: Number(one(raw.pageSize) || 10),
   };
-  const [result, canCreate, canUpdate] = await Promise.all([
-    getMedicineService().list(query),
+
+  const medicineService = getMedicineService();
+  const inventoryService = getInventoryService();
+
+  // Parallelize list query, counts for KPI metrics, and user permissions
+  const [
+    result,
+    allMedicinesRes,
+    activeMedicinesRes,
+    controlledMedicinesRes,
+    inventoryMetrics,
+    canCreate,
+    canUpdate,
+  ] = await Promise.all([
+    medicineService.list(query),
+    medicineService.list({ pageSize: 1 }),
+    medicineService.list({ active: "Y", pageSize: 1 }),
+    medicineService.list({ controlled: "Y", pageSize: 1 }),
+    inventoryService.getDashboardMetrics(),
     can(permissions.medicineCreate),
     can(permissions.medicineUpdate),
   ]);
+
+  const isFiltered = Boolean(
+    query.query ||
+      (query.active && query.active !== "ALL") ||
+      (query.controlled && query.controlled !== "ALL") ||
+      (query.sort && query.sort !== "code"),
+  );
+
   const keptParams = new URLSearchParams();
   for (const key of ["query", "active", "controlled", "sort", "direction", "pageSize"]) {
     const value = one(raw[key]);
@@ -47,248 +77,105 @@ export default async function MedicinesPage({ searchParams }: { searchParams: Se
   }
 
   return (
-    <div className="page-stack">
+    <div className="page-stack space-y-4 sm:space-y-5">
+      {/* 1. Page Header with compact actions */}
       <PageHeader
         title="Danh mục thuốc"
-        description="Quản lý thông tin chuẩn, đơn vị cơ sở và ngưỡng tồn của từng thuốc."
+        description="Quản lý danh mục dược phẩm, hoạt chất, quy chế kiểm soát và định mức tồn an toàn."
         actions={
-          canCreate ? (
-            <Link className="btn btn-primary" href="/medicines/new">
-              <Plus size={16} /> Thêm thuốc mới
+          <div className="flex items-center gap-2">
+            <Link
+              className="btn btn-secondary btn-md"
+              href="/inventory"
+              title="Tra cứu số dư tồn kho dược phẩm"
+            >
+              <PackageSearch size={15} aria-hidden="true" />
+              <span>Tra cứu tồn kho</span>
             </Link>
-          ) : undefined
+            {canCreate && (
+              <Link
+                className="btn btn-primary btn-md"
+                href="/medicines/new"
+                title="Khởi tạo thuốc mới trong danh mục"
+              >
+                <Plus size={16} aria-hidden="true" />
+                <span>Thêm thuốc mới</span>
+              </Link>
+            )}
+          </div>
         }
       />
 
-      <section className="panel filter-panel">
-        <form className="filter-form" method="get">
-          <SearchInput
-            defaultValue={one(raw.query)}
-            name="query"
-            placeholder="Tìm theo mã, tên hoặc hoạt chất…"
-          />
-          <label>
-            <span>Trạng thái</span>
-            <Select
-              defaultValue={one(raw.active) || "ALL"}
-              name="active"
-              options={[
-                { value: "ALL", label: "Tất cả" },
-                { value: "Y", label: "Đang hoạt động" },
-                { value: "N", label: "Ngừng hoạt động" },
-              ]}
-            />
-          </label>
-          <label>
-            <span>Kiểm soát</span>
-            <Select
-              defaultValue={one(raw.controlled) || "ALL"}
-              name="controlled"
-              options={[
-                { value: "ALL", label: "Tất cả" },
-                { value: "Y", label: "Có kiểm soát" },
-                { value: "N", label: "Thông thường" },
-              ]}
-            />
-          </label>
-          <label>
-            <span>Sắp xếp</span>
-            <Select
-              defaultValue={one(raw.sort) || "code"}
-              name="sort"
-              options={[
-                { value: "code", label: "Mã thuốc" },
-                { value: "name", label: "Tên thuốc" },
-                { value: "minimumStock", label: "Tồn tối thiểu" },
-              ]}
-            />
-          </label>
-          <input type="hidden" name="direction" value="asc" />
-          <button className="btn btn-secondary" type="submit">
-            <SlidersHorizontal size={16} /> Áp dụng
-          </button>
-        </form>
-      </section>
+      {/* 2. Medicine KPI Stat Cards */}
+      <MedicineStatsOverview
+        totalMedicines={allMedicinesRes.total}
+        activeMedicines={activeMedicinesRes.total}
+        controlledMedicines={controlledMedicinesRes.total}
+        lowStockMedicines={inventoryMetrics.lowStockMedicineCount}
+      />
 
-      <section className="panel table-panel">
-        <div className="table-heading">
+      {/* 3. Filter and Search Bar */}
+      <MedicineFilterBar
+        query={query.query}
+        active={query.active}
+        controlled={query.controlled}
+        sort={query.sort}
+        direction={query.direction}
+      />
+
+      {/* 4. Medicine Data Presentation */}
+      <section className="panel table-panel bg-white border border-[var(--border-default)] rounded-[var(--radius-lg)] shadow-[var(--shadow-elevation-1)] overflow-hidden">
+        <div className="table-heading px-4 sm:px-5 py-3 border-b border-[var(--border-default)] flex items-center justify-between">
           <div>
-            <h2>Thuốc trong danh mục</h2>
-            <p>{result.total.toLocaleString("vi-VN")} bản ghi phù hợp</p>
+            <h2 className="text-sm sm:text-base font-bold text-slate-900">
+              Danh sách thuốc ({result.total.toLocaleString("vi-VN")})
+            </h2>
+            <p className="text-xs text-slate-500 mt-0.5">
+              {isFiltered
+                ? "Đang hiển thị các thuốc phù hợp với bộ lọc tìm kiếm hiện tại"
+                : "Toàn bộ danh mục dược phẩm đang quản lý trong hệ thống"}
+            </p>
           </div>
+          {isFiltered && (
+            <span className="text-[11px] font-semibold text-emerald-800 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-[var(--radius-sm)]">
+              Đang lọc
+            </span>
+          )}
         </div>
 
-        {result.items.length ? (
+        {result.items.length > 0 ? (
           <>
-            {/* Desktop Table View */}
-            <div className="desktop-table-view">
-              <div className="table-scroll">
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Mã thuốc</th>
-                      <th>Tên thuốc</th>
-                      <th>Đơn vị</th>
-                      <th className="number-cell">Tồn tối thiểu</th>
-                      <th>Kiểm soát</th>
-                      <th>Trạng thái</th>
-                      <th>
-                        <span className="sr-only">Thao tác</span>
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {result.items.map((medicine) => (
-                      <tr key={medicine.id}>
-                        <td>
-                          <Link className="code-link" href={`/medicines/${medicine.id}`}>
-                            {medicine.code}
-                          </Link>
-                        </td>
-                        <td>
-                          <div className="medicine-name">
-                            <span className="table-icon">
-                              <Pill size={17} />
-                            </span>
-                            <span>
-                              <strong>{medicine.name}</strong>
-                              <small>
-                                {[medicine.activeIngredient, medicine.strength]
-                                  .filter(Boolean)
-                                  .join(" · ") || "Chưa có hoạt chất"}
-                              </small>
-                            </span>
-                          </div>
-                        </td>
-                        <td>{medicine.baseUnitName}</td>
-                        <td className="number-cell">{medicine.minimumStock.toLocaleString("vi-VN")}</td>
-                        <td>
-                          {medicine.controlled === "Y" ? (
-                            <Badge variant="warning">Kiểm soát</Badge>
-                          ) : (
-                            <span className="muted">Thông thường</span>
-                          )}
-                        </td>
-                        <td>
-                          <StatusBadge active={medicine.active === "Y"}>
-                            {medicine.active === "Y" ? "Hoạt động" : "Đã ngừng"}
-                          </StatusBadge>
-                        </td>
-                        <td>
-                          <div className="row-actions">
-                            <Link href={`/medicines/${medicine.id}`} aria-label={`Xem ${medicine.name}`} title="Xem chi tiết">
-                              <Eye size={16} />
-                            </Link>
-                            {canUpdate ? (
-                              <Link href={`/medicines/${medicine.id}/edit`} aria-label={`Sửa ${medicine.name}`} title="Chỉnh sửa">
-                                <Pencil size={15} />
-                              </Link>
-                            ) : null}
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+            <MedicineTable medicines={result.items} canUpdate={canUpdate} />
+
+            {/* Pagination Controls */}
+            <footer className="pagination">
+              <p>
+                Trang {result.page} / {result.totalPages} ({result.total.toLocaleString("vi-VN")} thuốc)
+              </p>
+              <div>
+                <Link
+                  className={result.page <= 1 ? "disabled" : ""}
+                  aria-disabled={result.page <= 1}
+                  href={pageHref(keptParams, Math.max(1, result.page - 1))}
+                  title="Trang trước"
+                >
+                  <ChevronLeft size={16} aria-hidden="true" /> Trước
+                </Link>
+                <span>{result.page}</span>
+                <Link
+                  className={result.page >= result.totalPages ? "disabled" : ""}
+                  aria-disabled={result.page >= result.totalPages}
+                  href={pageHref(keptParams, Math.min(result.totalPages, result.page + 1))}
+                  title="Trang sau"
+                >
+                  Sau <ChevronRight size={16} aria-hidden="true" />
+                </Link>
               </div>
-            </div>
-
-            {/* Mobile Touch Cards View */}
-            <div className="mobile-card-view">
-              <div className="data-card-list">
-                {result.items.map((medicine) => (
-                  <article key={`mob-${medicine.id}`} className="data-card">
-                    <div className="data-card-header">
-                      <div>
-                        <Link className="code-link" href={`/medicines/${medicine.id}`}>
-                          {medicine.code}
-                        </Link>
-                        <h3 className="data-card-title">{medicine.name}</h3>
-                        <p className="data-card-subtitle">
-                          {[medicine.activeIngredient, medicine.strength].filter(Boolean).join(" · ") ||
-                            "Chưa có hoạt chất"}
-                        </p>
-                      </div>
-                      <StatusBadge active={medicine.active === "Y"}>
-                        {medicine.active === "Y" ? "Hoạt động" : "Đã ngừng"}
-                      </StatusBadge>
-                    </div>
-
-                    <div className="data-card-grid">
-                      <div className="data-card-prop">
-                        <span className="data-card-prop-label">Đơn vị cơ sở</span>
-                        <span className="data-card-prop-val">{medicine.baseUnitName}</span>
-                      </div>
-                      <div className="data-card-prop">
-                        <span className="data-card-prop-label">Tồn tối thiểu</span>
-                        <span className="data-card-prop-val">
-                          {medicine.minimumStock.toLocaleString("vi-VN")} {medicine.baseUnitName}
-                        </span>
-                      </div>
-                      <div className="data-card-prop">
-                        <span className="data-card-prop-label">Kiểm soát đặc biệt</span>
-                        <div>
-                          {medicine.controlled === "Y" ? (
-                            <Badge variant="warning">Có kiểm soát</Badge>
-                          ) : (
-                            <span className="muted">Không</span>
-                          )}
-                        </div>
-                      </div>
-                      <div className="data-card-prop">
-                        <span className="data-card-prop-label">Dạng bào chế</span>
-                        <span className="data-card-prop-val">{medicine.dosageForm || "—"}</span>
-                      </div>
-                    </div>
-
-                    <div className="data-card-footer">
-                      <Link className="btn btn-secondary btn-sm" href={`/medicines/${medicine.id}`}>
-                        Chi tiết <ArrowRight size={14} />
-                      </Link>
-
-                      {canUpdate && (
-                        <Link className="btn btn-secondary btn-sm" href={`/medicines/${medicine.id}/edit`}>
-                          <Pencil size={14} /> Sửa
-                        </Link>
-                      )}
-                    </div>
-                  </article>
-                ))}
-              </div>
-            </div>
+            </footer>
           </>
         ) : (
-          <div className="empty-state">
-            <span>
-              <Pill size={24} />
-            </span>
-            <h3>Không tìm thấy thuốc</h3>
-            <p>Thử thay đổi từ khóa hoặc bộ lọc hiện tại.</p>
-          </div>
+          <MedicineEmptyState isFiltered={isFiltered} canCreate={canCreate} />
         )}
-
-        <footer className="pagination">
-          <p>
-            Trang {result.page} / {result.totalPages} ({result.total.toLocaleString("vi-VN")} thuốc)
-          </p>
-          <div>
-            <Link
-              className={result.page <= 1 ? "disabled" : ""}
-              aria-disabled={result.page <= 1}
-              href={pageHref(keptParams, Math.max(1, result.page - 1))}
-            >
-              <ChevronLeft size={16} /> Trước
-            </Link>
-            <span>{result.page}</span>
-            <Link
-              className={result.page >= result.totalPages ? "disabled" : ""}
-              aria-disabled={result.page >= result.totalPages}
-              href={pageHref(keptParams, Math.min(result.totalPages, result.page + 1))}
-            >
-              Sau <ChevronRight size={16} />
-            </Link>
-          </div>
-        </footer>
       </section>
     </div>
   );

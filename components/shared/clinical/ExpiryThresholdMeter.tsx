@@ -15,11 +15,17 @@ export interface ExpiryThresholdMeterProps {
  */
 export function calculateDaysUntilExpiry(expiryDateStr: string): number {
   if (!expiryDateStr) return 0;
-  const target = new Date(expiryDateStr);
   const now = new Date();
-  // Normalize to midnight for calendar-day accuracy
-  const targetDay = new Date(target.getFullYear(), target.getMonth(), target.getDate()).getTime();
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+
+  const parts = expiryDateStr.split("T")[0].split("-").map(Number);
+  if (parts.length === 3 && !isNaN(parts[0]) && !isNaN(parts[1]) && !isNaN(parts[2])) {
+    const targetDay = new Date(parts[0], parts[1] - 1, parts[2]).getTime();
+    return Math.round((targetDay - today) / (1000 * 60 * 60 * 24));
+  }
+
+  const target = new Date(expiryDateStr);
+  const targetDay = new Date(target.getFullYear(), target.getMonth(), target.getDate()).getTime();
   return Math.round((targetDay - today) / (1000 * 60 * 60 * 24));
 }
 

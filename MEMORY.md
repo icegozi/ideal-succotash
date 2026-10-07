@@ -276,6 +276,21 @@ icegozi_medstock/
    - Desktop (>= 780px): Bảng compact chuẩn nghiệp vụ (`.desktop-table-view`), header Slate 100 chữ đậm 11px, số liệu canh phải `tabular-nums` (`.cell-numeric`), số lô monospace (`.cell-batch`).
    - Mobile (< 780px): Chuyển sang danh sách thẻ (`.mobile-card-view` + `.data-card-list`), ưu tiên hiển thị nổi bật số lượng tồn khả dụng, hạn sử dụng và badge cảnh báo.
 7. **Responsive Form Table (Dynamic Rows)**: Trong các bảng động của phiếu nhập/xuất, dùng `.responsive-item-table` chuyển thành từng khối card có `.item-cell-label` trên mobile, không nhân đôi input để bảo vệ React Hook Form registration.
+8. **Enterprise Dashboard Architecture (Direction A — Clinical Precision 3D)**:
+   - **Header tinh gọn**: Dùng `DashboardHeader` compact (80–110px) kết hợp `QuickActions` (Primary: Xuất kho FEFO, Secondary: Nhập kho, Ghost: Tra cứu kho / Kiểm kê), loại bỏ triệt để hero marketing.
+   - **KPI 4 cột Data-first**: `StatsOverview` với 4 `StatCard` (Danh mục, Lô tồn, Lô cận hạn, Cần xử lý), số liệu to rõ `tabular-nums`, không text phụ rườm rà.
+   - **Bố cục 65% : 35% (8:4 grid)**:
+     - Trái 65%: `FefoAlertCard` chứa `FefoAlertTable` compact (Thuốc, Số lô, Hạn dùng, Tồn kho, Mức độ Critical/Warning/Notice, Thao tác xuất nhanh) và `DashboardEmptyState` khi 0 cảnh báo.
+     - Phải 35%: `PendingActions` dạng TaskList (Phiếu nhập nháp, Phiếu xuất nháp, Thuốc dưới định mức, Lô thuốc hết hạn khóa xuất).
+   - **Chân trang**: `RecentMovementsMini` hiển thị 5 biến động sổ cái gần nhất phục vụ kiểm toán Oracle.
+
+9. **Enterprise Medicine Catalog Architecture (Direction A — Clinical Precision 3D)**:
+   - **Header tinh gọn**: `PageHeader` chuẩn y tế kèm action chính `Thêm thuốc mới` (khi có quyền `medicineCreate`) và action phụ `Tra cứu tồn kho`.
+   - **4 KPI Stat Cards**: `MedicineStatsOverview` hiển thị Tổng danh mục thuốc, Đang lưu hành (`active === 'Y'`), Kiểm soát đặc biệt (`controlled === 'Y'`), và Dưới định mức an toàn (`lowStockMedicineCount`).
+   - **Bộ lọc thông minh 1 dòng**: `MedicineFilterBar` tích hợp tìm kiếm tức thời theo mã/tên/hoạt chất, bộ 3 Selects (Trạng thái, Quy chế, Sắp xếp), nút Áp dụng và nút Đặt lại (Reset) 1-click khi có bộ lọc hoạt động.
+   - **Dual-View Table & Touch Cards**: `MedicineTable` cung cấp 2 chế độ hiển thị (Desktop compact table + Mobile touch cards) với phân cấp rõ rệt biệt dược vs hoạt chất/hàm lượng, mã thuốc monospace, tồn tối thiểu `tabular-nums`, huy hiệu kỹ thuật `.controlled-drug-badge`.
+   - **Phân tách Empty State**: `MedicineEmptyState` xử lý riêng biệt khi tìm kiếm/lọc không có kết quả (kèm nút Đặt lại bộ lọc) và khi danh mục trống (kèm nút Thêm thuốc mới).
+   - **Tối ưu hóa hiệu năng SSR**: Sử dụng `Promise.all` song song hóa toàn bộ truy vấn dữ liệu (`result`, `allMedicinesRes`, `activeMedicinesRes`, `controlledMedicinesRes`, `inventoryMetrics`, `canCreate`, `canUpdate`).
 
 ### Centralized Message Management (`constants/messages.ts` & `lib/message.ts`)
 
@@ -350,6 +365,8 @@ Xem `.env.example`. Key variables:
 - [x] **Command Dashboard Modernization (`/`)**: Nâng cấp toàn diện Bàn làm việc Chỉ huy Tổng quan với 4 Stats Widgets nổi khối 3D (`--shadow-elevation-1..2`), hàng chờ xử lý thuốc cận hạn (`ExpiryThresholdMeter`), sổ cái biến động kho gần nhất (`GIAO_DICH_KHO`), và quy tắc cốt lõi FEFO.
 - [x] **FEFO Stock Issue Modernization (`/stock-out/new`)**: Tích hợp hoàn chỉnh `FefoAllocationCard` vào màn hình tạo phiếu xuất kho, thay thế preview đơn sơ bằng thẻ cấp phát FEFO lâm sàng chuyên dụng tích hợp `ExpiryThresholdMeter`, gắn huy hiệu ưu tiên FEFO #1, cảnh báo thiếu hụt tức thời, và cung cấp nút bật/tắt ghi đè lô thủ công kèm bắt buộc nhập lý do lâm sàng đồng bộ vào React Hook Form (40/40 tests pass).
 - [x] **Centralized Message Management (`constants/messages.ts` & `lib/message.ts`)**: Chuẩn hóa toàn bộ message hiển thị người dùng (thành công, lỗi, xác nhận, cảnh báo, thông báo, validation, HTTP status mapping, dynamic parameters) vào một nơi quản lý tập trung theo domain (`COMMON`, `AUTH`, `VALIDATION`, `MEDICINE`, `INVENTORY`, `HTTP_ERROR`, `ENTITY`, `CONFIRM`). Toàn bộ Zod schemas, Server Actions, services, và components đã chuyển sang dùng hằng số tập trung, hỗ trợ i18n trong tương lai.
+- [x] **Enterprise Dashboard Redesign (Direction A — Clinical Precision 3D)**: Redesign toàn diện màn hình Tổng quan kho (`app/page.tsx`), loại bỏ hero banner marketing, xây dựng bộ component chuẩn (`components/ui/SectionCard`, `components/ui/DashboardEmptyState`, `components/dashboard/`), phân cấp thị giác 3-5s, tối ưu responsive desktop/tablet/mobile (49/49 tests pass).
+- [x] **Enterprise Medicine Catalog Redesign (Direction A — Clinical Precision 3D)**: Redesign toàn diện màn hình Danh mục thuốc (`/medicines`), phân cấp thị giác rõ nét biệt dược vs hoạt chất, 4 KPI cards (`MedicineStatsOverview`), thanh lọc 1 dòng (`MedicineFilterBar`) kèm 1-click Reset, bảng Dual-View (`MedicineTable`) cho desktop/mobile, phân tách trạng thái rỗng (`MedicineEmptyState`), và song song hóa SSR truy vấn (60/60 tests pass, zero TypeScript/ESLint errors, production build pass).
 
 ### 🔲 Chưa làm
 

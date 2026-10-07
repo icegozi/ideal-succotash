@@ -13,10 +13,17 @@ describe("Clinical Components — Business Logic & Calculations", () => {
       expect(formatDisplayDate("")).toBe("N/A");
     });
 
+    function toLocalDateString(d: Date): string {
+      const year = d.getFullYear();
+      const month = String(d.getMonth() + 1).padStart(2, "0");
+      const day = String(d.getDate()).padStart(2, "0");
+      return `${year}-${month}-${day}`;
+    }
+
     it("calculates positive days for future expiry dates", () => {
       const future = new Date();
       future.setDate(future.getDate() + 45);
-      const futureStr = future.toISOString().split("T")[0];
+      const futureStr = toLocalDateString(future);
       const days = calculateDaysUntilExpiry(futureStr);
       expect(days).toBeGreaterThanOrEqual(44);
       expect(days).toBeLessThanOrEqual(46);
@@ -25,13 +32,13 @@ describe("Clinical Components — Business Logic & Calculations", () => {
     it("calculates negative days for past expired dates", () => {
       const past = new Date();
       past.setDate(past.getDate() - 10);
-      const pastStr = past.toISOString().split("T")[0];
+      const pastStr = toLocalDateString(past);
       const days = calculateDaysUntilExpiry(pastStr);
       expect(days).toBeLessThanOrEqual(-9);
     });
 
     it("handles today's date safely and does not mark as expired", () => {
-      const todayStr = new Date().toISOString().split("T")[0];
+      const todayStr = toLocalDateString(new Date());
       const days = calculateDaysUntilExpiry(todayStr);
       expect(days).toBe(0);
       // Semantics: daysRemaining < 0 is expired; 0 is valid and classified as critical/countdown
@@ -44,7 +51,7 @@ describe("Clinical Components — Business Logic & Calculations", () => {
     it("identifies past date as strictly expired", () => {
       const past = new Date();
       past.setDate(past.getDate() - 1);
-      const pastStr = past.toISOString().split("T")[0];
+      const pastStr = toLocalDateString(past);
       const days = calculateDaysUntilExpiry(pastStr);
       expect(days).toBeLessThan(0);
       const isExpired = days < 0;

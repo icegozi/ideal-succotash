@@ -737,7 +737,7 @@ kbd {
 
 .muted { color: var(--text-muted); font-size: 11px; }
 
-/* Hero Panel (Dashboard) */
+/* Hero Panel (Dashboard Legacy) */
 .hero-panel {
   min-height: 200px;
   padding: 34px 38px;
@@ -752,6 +752,49 @@ kbd {
   background: linear-gradient(130deg, #064e3b 0%, #059669 65%, #0d9488 100%);
   box-shadow: var(--shadow-elevated);
 }
+
+/* Dashboard Quick Actions Container */
+.quick-actions-container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 640px) {
+  .quick-actions-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    width: 100%;
+    gap: 8px;
+  }
+}
+
+/* FEFO Alert Table Responsive Toggle */
+.fefo-alert-table-wrapper .desktop-table-view {
+  display: block;
+}
+.fefo-alert-table-wrapper .mobile-card-view {
+  display: none;
+}
+
+@media (max-width: 780px) {
+  .fefo-alert-table-wrapper .desktop-table-view {
+    display: none;
+  }
+  .fefo-alert-table-wrapper .mobile-card-view {
+    display: block;
+  }
+}
+
+/* Stat Card Hover Depth */
+.stat-card {
+  transition: transform 140ms ease-out, box-shadow 140ms ease-out;
+}
+.stat-card:hover {
+  transform: translateY(-2px);
+}
+
 
 .hero-panel::after {
   content: "";
